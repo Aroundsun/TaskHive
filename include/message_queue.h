@@ -9,20 +9,22 @@ extern "C"
 }
 
 // channel_id 常量集中管理
-constexpr int TASK_CHANNEL_ID = 2;
-constexpr int RESULT_CHANNEL_ID = 3;
-constexpr int HEARTBEAT_CHANNEL_ID = 4;
+#define TASK_CHANNEL_ID 2
+#define RESULT_CHANNEL_ID 3
+#define HEARTBEAT_CHANNEL_ID 4
 
 // 消息队列基类
 class MessageQueue
 {
 public:
+
     explicit MessageQueue(int channel_id) : channel_id_(channel_id) {
         if (channel_id != TASK_CHANNEL_ID && channel_id != RESULT_CHANNEL_ID && channel_id != HEARTBEAT_CHANNEL_ID) {
             throw std::invalid_argument("MessageQueue: 非法的 channel_id");
         }
         conn_ = nullptr;
         socket_ = nullptr;
+        is_connected_ = false;
     }
     virtual ~MessageQueue() {}
     
@@ -77,15 +79,30 @@ public:
             return false;
         }
         //声明队列
-        amqp_bytes_t_ queueid;
-        queueid.len = queue_name_.size();
-        queueid.bytes = (void*)queue_name_.c_str();
-        amqp_queue_declare(conn_,channel_id_,queueid,0,0,0,0,0);
+        amqp_bytes_t queueid = amqp_cstring_bytes(queue_name_.c_str());
+        amqp_queue_declare(conn_, channel_id_, queueid, 0, 1, 0, 0, amqp_empty_table);
         //标记连接成功
         is_connected_ = true;
         return true;
     }
-    virtual void close() {}
+    
+    virtual void close() {
+        if (is_connected_ && conn_) {
+            // 关闭 channel
+            amqp_channel_close(conn_, channel_id_, AMQP_REPLY_SUCCESS);
+            
+            // 关闭连接
+            amqp_connection_close(conn_, AMQP_REPLY_SUCCESS);
+            
+            // 销毁连接
+            amqp_destroy_connection(conn_);
+            
+            // 重置状态
+            conn_ = nullptr;
+            socket_ = nullptr;
+            is_connected_ = false;
+        }
+    }
     int getChannelId() const { return channel_id_; }
 protected:
     std::string queue_name_;
@@ -95,14 +112,18 @@ protected:
     std::string mq_pass_;
     amqp_connection_state_t conn_ ;
     amqp_socket_t *socket_ ;
-    bool connected_ = false;
-    int channel_id_ = 1;
+    bool is_connected_;
+    int channel_id_;
 };
 
 // 任务队列基类
 template <typename Derived>
 class TaskQueue : public MessageQueue
 {
+public:
+// 任务队列消费回调
+using TaskCallback = std::function<void(taskscheduler::Task &task)>;
+
 protected:
     TaskQueue(int channel_id = TASK_CHANNEL_ID) : MessageQueue(channel_id) {
         if (channel_id != TASK_CHANNEL_ID) {
@@ -117,9 +138,9 @@ public:
     {
         return static_cast<Derived *>(this)->publishTaskImpl(task);
     }
-    virtual bool consumeTask(taskscheduler::Task &task)
+    virtual bool consumeTask(TaskCallback callback)
     {
-        return static_cast<Derived *>(this)->consumeTaskImpl(task);
+        return static_cast<Derived *>(this)->consumeTaskImpl(callback);
     }
 };
 
@@ -127,6 +148,10 @@ public:
 template <typename Derived>
 class ResultQueue : public MessageQueue
 {
+public:
+// 结果队列消费回调
+using ResultCallback = std::function<void(taskscheduler::TaskResult &result)>;
+
 protected:
     ResultQueue(int channel_id = RESULT_CHANNEL_ID) : MessageQueue(channel_id) {
         if (channel_id != RESULT_CHANNEL_ID) {
@@ -141,9 +166,9 @@ public:
     {
         return static_cast<Derived *>(this)->publishResultImpl(result);
     }
-    virtual bool consumeResult(taskscheduler::TaskResult &result)
+    virtual bool consumeResult(ResultCallback callback) 
     {
-        return static_cast<Derived *>(this)->consumeResultImpl(result);
+        return static_cast<Derived *>(this)->consumeResultImpl(callback);
     }
 };
 
@@ -151,6 +176,10 @@ public:
 template <typename Derived>
 class HeartbeatQueue : public MessageQueue
 {
+public:
+// 心跳队列消费回调
+using HeartbeatCallback = std::function<void(taskscheduler::Heartbeat &hb)>;
+
 protected:
     HeartbeatQueue(int channel_id = HEARTBEAT_CHANNEL_ID) : MessageQueue(channel_id) {
         if (channel_id != HEARTBEAT_CHANNEL_ID) {
@@ -165,8 +194,8 @@ public:
     {
         return static_cast<Derived *>(this)->publishHeartbeatImpl(hb);
     }
-    virtual bool consumeHeartbeat(taskscheduler::Heartbeat &hb)
+    virtual bool consumeHeartbeat(HeartbeatCallback callback)
     {
-        return static_cast<Derived *>(this)->consumeHeartbeatImpl(hb);
+        return static_cast<Derived *>(this)->consumeHeartbeatImpl(callback);
     }
 };
