@@ -9,15 +9,12 @@ enum TaskStatus {
     RUNNING = 1;    // 正在执行
     SUCCESS = 2;    // 执行成功
     FAILED = 3;     // 执行失败
-    TIMEOUT = 4;    // 执行超时
-    CANCELLED = 5;  // 已取消
 }
 
 // 任务类型枚举
 enum TaskType {
-    COMMAND = 0;    // 系统命令
-    FUNCTION = 1;   // 函数回调
-    HTTP = 2;       // HTTP请求
+    FUNCTION = 0;   // 函数回调
+    COMMAND = 1;    // 脚本命令
 }
 
 // 任务结构
@@ -25,14 +22,9 @@ message Task {
     string task_id = 1;           // 任务唯一ID
     TaskType type = 2;            // 任务类型
     string content = 3;           // 任务内容（命令或函数名）
-    int32 max_retries = 4;        // 最大重试次数
-    int32 current_retry = 5;      // 当前重试次数
-    int32 timeout_seconds = 6;    // 超时时间（秒）
-    int64 create_time = 7;        // 创建时间戳
-    int64 schedule_time = 8;      // 调度时间戳
     string worker_id = 9;         // 执行器ID
     TaskStatus status = 10;       // 任务状态
-    map<string, string> metadata = 11; // 存储任务的额外信息
+    map<string, string> metadata = 11; // 任务的参数信息
 }
 
 // 执行结果结构
@@ -45,23 +37,25 @@ message TaskResult {
     int64 end_time = 6;           // 结束时间戳
     int64 duration_ms = 7;        // 执行时长（毫秒）
     string worker_id = 8;         // 执行器ID
-    int32 exit_code = 9;          // 退出码
+
 }
 
 // 心跳消息
-message Heartbeat {
+message WorkerHeartbeat {
     string worker_id = 1;         // 执行器ID
     string worker_ip = 2;         // 执行器IP
     int32 worker_port = 3;        // 执行器端口
     int64 timestamp = 4;          // 心跳时间戳
     bool is_healthy = 5;          // 健康状态
+    map<string,string> dec = 6;   //能力描述 
 }
 
-// 注册消息
-message WorkerRegistration {
-    string worker_id = 1;         // 执行器ID
-    string worker_ip = 2;         // 执行器IP
-    int32 worker_port = 3;        // 执行器端口
-    int64 register_time = 4;      // 注册时间戳
-    map<string, string> capabilities = 5; // 执行器能力
-} 
+message SchedulerHeartbeat{
+    string scheduler_id = 1;
+    string scheduler_ip = 2;
+    int32 scheduler_port = 3;
+    int32 timetamp = 4;
+    bool is_healthy = 5;
+    map<string,string> dec = 6;   //能力描述 
+}
+

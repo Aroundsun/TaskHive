@@ -1,9 +1,10 @@
 extern "C" {
+#define THREADED
 #include <zookeeper/zookeeper.h>
 }
 #include "zk_client.h"
 #include <iostream>
-#include <cstring>
+#include <string>
 
 
 ZkClient::ZkClient() : zh_(nullptr) {}

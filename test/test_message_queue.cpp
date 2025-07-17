@@ -67,47 +67,8 @@ void task_flow() {
     schedulerResultQueue->close();
 }
 
-// 心跳链路：心跳发布 -> 心跳消费
-void heartbeat_flow() {
-    std::cout << "===== 心跳链路测试 =====" << std::endl;
-    auto workerHeartbeatQueue = std::make_shared<MyWorkerHeartbeatQueue>();
-    auto schedulerHeartbeatQueue = std::make_shared<MySchedulerHeartbeatQueue>();
-    workerHeartbeatQueue->connect("localhost", 5672, "guest", "guest");
-    schedulerHeartbeatQueue->connect("localhost", 5672, "guest", "guest");
-
-    // 用于同步心跳消费完成
-    std::atomic<bool> heartbeat_consumed{false};
-
-    // 发布心跳
-    std::thread t1([workerHeartbeatQueue](){
-        std::this_thread::sleep_for(std::chrono::milliseconds(20));
-        taskscheduler::Heartbeat hb;
-        hb.set_worker_id("worker-1");
-        hb.set_timestamp(time(nullptr));
-        workerHeartbeatQueue->publishHeartbeat(hb);
-        std::cout << "[Worker] 已发布心跳: " << hb.worker_id() << std::endl;
-    });
-    // 消费心跳
-    std::thread t2([schedulerHeartbeatQueue, &heartbeat_consumed](){
-        try {
-            schedulerHeartbeatQueue->consumeHeartbeat([&](taskscheduler::Heartbeat &h){
-                std::cout << "[调度器] 已消费心跳: " << h.worker_id() << std::endl;
-                heartbeat_consumed = true;
-            });
-        } catch (const std::exception& e) {
-            std::cout << "[调度器] 心跳消费线程退出: " << e.what() << std::endl;
-        }
-    });
-    t1.join();
-    // 等待心跳被消费
-    while (!heartbeat_consumed) std::this_thread::sleep_for(std::chrono::milliseconds(5));
-    t2.detach(); // 消费线程已完成任务，主线程关闭队列
-    workerHeartbeatQueue->close();
-    schedulerHeartbeatQueue->close();
-}
-
 int main() {
     task_flow();
-    heartbeat_flow();
+
     return 0;
 } 

@@ -26,7 +26,6 @@ public:
     // 删除节点
     bool deleteNode(const std::string &path);
 
-
     // 判断节点是否存在
     bool exists(const std::string &path);
 

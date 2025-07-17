@@ -1,0 +1,2 @@
+/home/admin_xhy/TaskHive/build/CMakeFiles/edit_cache.dir
+/home/admin_xhy/TaskHive/build/CMakeFiles/rebuild_cache.dir
