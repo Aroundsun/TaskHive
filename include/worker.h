@@ -3,7 +3,29 @@
 #include "task.pb.h"
 #include "redis_client.h"
 #include "zk_client.h"
+#include <atomic>
+#include <queue>
+#include <mutex>
+#include <condition_variable>
 
+//配置信息
+//工作端ID
+const std::string WORKER_ID = "worker-1";
+//zk 地址
+const std::string WORKER_ZK_ADDR = "127.0.0.1:2181";
+//zk 路径
+const std::string WORKER_ZK_PATH = "TaskHive/workers";
+//zk 节点
+const std::string WORKER_ZK_NODE = "worker-1";
+
+//rabbitmq配置
+const std::string RABBITMQ_HOST = "127.0.0.1";
+const int RABBITMQ_PORT = 5672;
+const std::string RABBITMQ_USER = "guest";
+const std::string RABBITMQ_PASSWORD = "guest";
+
+//函数库
+const std::string FUNCTION_LIB = "libmyfuncs.so";
 
 //执行期工作器
 class Worker
@@ -12,14 +34,58 @@ public:
     Worker();
     ~Worker();
 
-    bool init(const std::string &zk_addr, const std::string &mq_host, int mq_port,
-              const std::string &mq_user, const std::string &mq_pass);
+    //初始化
+    void init();
 
-    //
-    std::shared_ptr<MyWorkerTaskQueue> taskQueue_;
-    std::shared_ptr<MyWorkerResultQueue> resultQueue_;
-    std::shared_ptr<MyWorkerHeartbeatQueue> heartbeatQueue_;
+    //启动
+    void start();
 
-    std::string workerId_;
-    bool running_;  
+    //停止
+    void stop();
+
+    //接收任务
+    void receive_task();
+
+    //上报任务结果
+    void report_task_result();
+
+    //上报心跳
+    void report_heartbeat();
+
+    //执行任务
+    void exec_task();
+
+
+    
+
+private:
+    
+    std::atomic<bool> running_;//运行状态
+
+    
+    std::shared_ptr<ZkClient> zkcli_;//zk客户端
+    
+    std::queue<taskscheduler::Task> pending_tasks_;//待执行任务缓存队列
+    std::mutex pending_tasks_mutex_;//待执行任务缓存队列互斥锁
+    std::condition_variable pending_tasks_queue_not_empty_;//待执行任务缓存队列条件变量
+
+    std::queue<taskscheduler::TaskResult> task_result_queue_;//任务结果缓存队列
+    std::mutex task_result_queue_mutex_;//任务结果缓存队列互斥锁
+    std::condition_variable task_result_queue_not_empty_;//任务结果缓存队列条件变量
+
+    
+    size_t pending_tasks_queue_size_;//待执行任务缓存队列大小
+    std::mutex pending_tasks_queue_size_mutex_;//待执行任务缓存队列大小互斥锁
+
+    
+    std::shared_ptr<MyWorkerTaskQueue> worker_task_queue_;//工作端任务队列
+    std::shared_ptr<MyWorkerResultQueue> worker_result_queue_;//工作端任务结果队列
+
+    
+    std::thread receive_task_thread_;//消费任务线程
+    std::thread consume_task_result_thread_;//消费任务结果线程
+    std::thread report_heartbeat_thread_;//上报心跳线程
+    std::thread exec_task_thread_;//执行任务线程
+
+
 };
