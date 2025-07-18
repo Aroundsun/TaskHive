@@ -15,6 +15,7 @@ public:
 
     // 缓存任务结果
     bool setTaskResult(const std::string& task_id, const std::string& result, int expire_seconds = 3600);
+    
     std::string getTaskResult(const std::string& task_id);
 
     

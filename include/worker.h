@@ -7,6 +7,7 @@
 #include <queue>
 #include <mutex>
 #include <condition_variable>
+#include <thread>
 
 //配置信息
 //工作端ID
@@ -24,8 +25,7 @@ const int RABBITMQ_PORT = 5672;
 const std::string RABBITMQ_USER = "guest";
 const std::string RABBITMQ_PASSWORD = "guest";
 
-//函数库
-const std::string FUNCTION_LIB = "libmyfuncs.so";
+
 
 //执行期工作器
 class Worker

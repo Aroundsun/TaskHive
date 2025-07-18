@@ -32,7 +32,6 @@ const std::map<std::string, std::string> DEC = {
     {"network", "100M"},
 };
 
-
 //接收任务配置
 const std::string RECEIVE_TASK_HOST = "127.0.0.1";
 const int RECEIVE_TASK_PORT = 12345;
@@ -63,18 +62,57 @@ void scheduler::start() {
 }
 // 初始化实现
 void scheduler::init() {
-    // 初始化zk客户端
-    zkcli_ = std::make_shared<ZkClient>();
-    zkcli_->connect(ZK_HOST);
-    // 初始化redis客户端
-    rediscli_ = std::make_shared<RedisClient>();
-    rediscli_->connect(REDIS_HOST, REDIS_PORT, REDIS_PASSWORD);
-    // 初始化任务队列
-    scheduler_task_queue_ = std::make_shared<MySchedulerTaskQueue>();
-    scheduler_task_queue_->connect(RABBITMQ_HOST, RABBITMQ_PORT, RABBITMQ_USER, RABBITMQ_PASSWORD);
-    scheduler_task_result_queue_ = std::make_shared<MySchedulerTaskResultQueue>();
-    scheduler_task_result_queue_->connect(RABBITMQ_HOST, RABBITMQ_PORT, RABBITMQ_USER, RABBITMQ_PASSWORD);
+    try {
+        std::cout << "初始化调度器..." << std::endl;
+        
+        // 初始化zk客户端
+        zkcli_ = std::make_shared<ZkClient>();
+        if (!zkcli_->connect(ZK_HOST)) {
+            std::cerr << "连接Zookeeper失败: " << ZK_HOST << std::endl;
+            return;
+        }
+        
+        // 初始化zk节点
+        std::string heartbeat_data;
+        taskscheduler::SchedulerHeartbeat heartbeat;
+        heartbeat.set_scheduler_id(ZK_NODE);
+        heartbeat.set_scheduler_ip(RECEIVE_TASK_HOST);
+        heartbeat.set_scheduler_port(RECEIVE_TASK_PORT);
+        heartbeat.set_timetamp(time(nullptr));
+        heartbeat.set_is_healthy(true);
 
+        //将能力描述添加到心跳数据
+        for(auto& item : DEC) {
+            heartbeat.mutable_dec()->insert({item.first, item.second});
+        }
+        //将心跳数据序列化
+        heartbeat.SerializeToString(&heartbeat_data);
+        
+        if (!zkcli_->createNode(ZK_PATH + "/" + ZK_NODE, heartbeat_data)) {
+            std::cerr << "创建Zookeeper节点失败" << std::endl;
+        }
+        
+        // 初始化redis客户端
+        rediscli_ = std::make_shared<RedisClient>();
+        if (!rediscli_->connect(REDIS_HOST, REDIS_PORT, REDIS_PASSWORD)) {
+            std::cerr << "连接Redis失败: " << REDIS_HOST << ":" << REDIS_PORT << std::endl;
+        }
+        
+        // 初始化任务队列
+        scheduler_task_queue_ = std::make_shared<MySchedulerTaskQueue>();
+        if (!scheduler_task_queue_->connect(RABBITMQ_HOST, RABBITMQ_PORT, RABBITMQ_USER, RABBITMQ_PASSWORD)) {
+            std::cerr << "连接RabbitMQ任务队列失败" << std::endl;
+        }
+        
+        scheduler_task_result_queue_ = std::make_shared<MySchedulerResultQueue>();
+        if (!scheduler_task_result_queue_->connect(RABBITMQ_HOST, RABBITMQ_PORT, RABBITMQ_USER, RABBITMQ_PASSWORD)) {
+            std::cerr << "连接RabbitMQ结果队列失败" << std::endl;
+        }
+        
+        std::cout << "调度器初始化完成" << std::endl;
+    } catch (const std::exception& e) {
+        std::cerr << "初始化调度器失败: " << e.what() << std::endl;
+    }
 }
 
 void scheduler::stop() {
@@ -92,64 +130,91 @@ void scheduler::stop() {
     if (get_task_result_thread_.joinable()) {
         get_task_result_thread_.join();
     }
-    zkcli_->close();
-    rediscli_->close();
-    scheduler_task_queue_->close();
-    scheduler_task_result_queue_->close();
-    if(!pending_tasks_.empty())
-    {
+    
+    if (zkcli_) {
+        zkcli_->close();
+    }
+    if (rediscli_) {
+        rediscli_->close();
+    }
+    if (scheduler_task_queue_) {
+        scheduler_task_queue_->close();
+    }
+    if (scheduler_task_result_queue_) {
+        scheduler_task_result_queue_->close();
+    }
+    
+    if(!pending_tasks_.empty()) {
+        std::cout << "待处理任务数量: " << pending_tasks_.size() << std::endl;
         //可以将这些待执行的任务分发给一个健康的调度器节点
         //TODO: 实现分发
-        //将这些待执行的任务分发给一个健康的调度器节点
-
-        pending_tasks_.clear();
     }
+    
+    std::cout << "调度器已停止" << std::endl;
 }
+
 // 接收任务实现
 void scheduler::receive_task() {
-
     //通过监听一个端口，接收任务
     // 创建一个socket
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd == -1) {
-        perror("socket");
+        std::cerr << "创建socket失败: " << strerror(errno) << std::endl;
         return;
     }
+    
+    // 设置socket选项，允许地址重用
+    int opt = 1;
+    setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+    
     // 绑定端口
     struct sockaddr_in addr;
     addr.sin_family = AF_INET;
     addr.sin_port = htons(RECEIVE_TASK_PORT);
     addr.sin_addr.s_addr = inet_addr(RECEIVE_TASK_HOST.c_str());
     if (bind(sockfd, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
-        perror("bind");
+        std::cerr << "绑定端口失败: " << strerror(errno) << std::endl;
         close(sockfd);
         return;
     }
+    
     // 监听端口
     if (listen(sockfd, 10) == -1) { 
-        perror("listen");
+        std::cerr << "监听端口失败: " << strerror(errno) << std::endl;
         close(sockfd);
         return;
     }
+    
+    std::cout << "开始监听任务，端口: " << RECEIVE_TASK_PORT << std::endl;
+    
     // 接受任务
     while (running_) {
         int connfd = accept(sockfd, NULL, NULL);
         if (connfd == -1) {
-            perror("accept");
+            if (running_) {
+                std::cerr << "接受连接失败: " << strerror(errno) << std::endl;
+            }
             continue;
         }
+        
         // 读取任务
-        char buffer[1024];
+        char buffer[4096];
         ssize_t len = read(connfd, buffer, sizeof(buffer));
         if (len == -1) {
-            perror("read");     
+            std::cerr << "读取数据失败: " << strerror(errno) << std::endl;     
             close(connfd);
             continue;
         }
+        
+        if (len == 0) {
+            close(connfd);
+            continue;
+        }
+        
         // 解析任务
         taskscheduler::Task task;
         if (!task.ParseFromArray(buffer, len)) {
-            perror("parse");
+            std::cerr << "解析任务失败" << std::endl;
             close(connfd);
             continue;
         }
@@ -195,48 +260,45 @@ void scheduler::submit_task() {
 // 获取任务结果实现
 void scheduler::get_task_result() {
     //消费rabbitmq中的任务结果
-    scheduler_task_result_queue_->consumeTaskResult([this](taskscheduler::TaskResult& result){
+    scheduler_task_result_queue_->consumeResult([this](taskscheduler::TaskResult& result){
         //将任务结果保存到redis
-        rediscli_->setTaskResult(result.task_id(), result.result(), 3600);
+        rediscli_->setTaskResult(result.task_id(), result.output(), 3600);
     });
     
 }
 // 上报心跳实现
 void scheduler::report_heartbeat() {
-    /*
-        string scheduler_id = 1; 
-        string scheduler_ip = 2;
-        int32 scheduler_port = 3;
-        int32 timetamp = 4;
-        bool is_healthy = 5;
-        map<string,string> dec = 6;   //能力描述 
+    while(running_) {
+        try {
+            //组装心跳数据
+            std::string heartbeat_data;
+            taskscheduler::SchedulerHeartbeat heartbeat;   
+            heartbeat.set_scheduler_id(ZK_NODE);
+            heartbeat.set_scheduler_ip(RECEIVE_TASK_HOST);
+            heartbeat.set_scheduler_port(RECEIVE_TASK_PORT);
+            heartbeat.set_timetamp(time(nullptr));
+            heartbeat.set_is_healthy(true);
+            
+            //将能力描述添加到心跳数据
+            for(auto& item : DEC) {
+                heartbeat.mutable_dec()->insert({item.first, item.second});
+            }
+            
+            //将节点数据序列化
+            heartbeat.SerializeToString(&heartbeat_data);
+            
+            //修改zk节点数据
+            if (zkcli_) {
+                zkcli_->createNode(ZK_PATH + "/" + ZK_NODE, heartbeat_data);
+            }
+            
+            //睡眠10秒
+            std::this_thread::sleep_for(std::chrono::seconds(10));
+        } catch (const std::exception& e) {
+            std::cerr << "上报心跳失败: " << e.what() << std::endl;
+            std::this_thread::sleep_for(std::chrono::seconds(5));
+        }
     }
-    */
-    //组装心跳数据
-    taskscheduler::SchedulerHeartbeat heartbeat;
-    heartbeat.set_scheduler_id(ZK_NODE);
-    heartbeat.set_scheduler_ip(RECEIVE_TASK_HOST);
-    heartbeat.set_scheduler_port(RECEIVE_TASK_PORT);
-    heartbeat.set_timetamp(time(nullptr));
-    heartbeat.set_is_healthy(true);
-    //将能力描述添加到心跳数据
-    for(auto& item : DEC)
-    {
-        heartbeat.mutable_dec()->insert({item.first, item.second});
-    }
-    
-    
-    //将心跳数据序列化
-    std::string heartbeat_data;
-    heartbeat.SerializeToString(&heartbeat_data);
-    while(running_)
-    {
-        //上报心跳到zk
-        zkcli_->setNodeData(ZK_PATH + "/" + ZK_NODE, heartbeat_data);  
-        //等待10秒
-        std::this_thread::sleep_for(std::chrono::seconds(10));
-    }
-
 }
 
 

@@ -61,15 +61,17 @@ bool RedisClient::connect(const std::string &host, int port, const std::string &
 
 bool RedisClient::setTaskResult(const std::string &task_id, const std::string &result, int expire_seconds)
 {
-    // 缓存任务结果
-    redisReply* reply = (redisReply*)redisCommand(context_,"SET %s %s",task_id.c_str(),result.c_str());
-    bool is_ok = (reply->type == REDIS_REPLY_STATUS && strcmp(reply->str, "OK") == 0);
+    // 使用哈希表存储任务结果
+    std::string key = task_id;
+    redisReply* reply = (redisReply*)redisCommand(context_,"HSET %s result %s",key.c_str(),result.c_str());
+    bool is_ok = (reply && (reply->type == REDIS_REPLY_INTEGER || reply->type == REDIS_REPLY_STATUS));
     if(reply) freeReplyObject(reply);
+
     if(!is_ok) return false;
 
     //设置过期时间
-    reply = (redisReply*)redisCommand(context_,"EXPIRE %s %d",task_id.c_str(),expire_seconds);
-    is_ok = (reply->type == REDIS_REPLY_INTEGER && reply->integer == 1);
+    reply = (redisReply*)redisCommand(context_,"EXPIRE %s %d",key.c_str(),expire_seconds);
+    is_ok = (reply && reply->type == REDIS_REPLY_INTEGER && reply->integer == 1);
     if(reply) freeReplyObject(reply);
     if(!is_ok) return false;
 
@@ -78,10 +80,11 @@ bool RedisClient::setTaskResult(const std::string &task_id, const std::string &r
 
 std::string RedisClient::getTaskResult(const std::string &task_id)
 {
-    std::string res;
+    std::string res = "NO_RESULT";
 
-    // 查询任务结果
-    redisReply* reply = (redisReply*)redisCommand(context_,"GET %s",task_id.c_str());
+    // 从哈希表查询任务结果
+    std::string key = "task_result:" + task_id;
+    redisReply* reply = (redisReply*)redisCommand(context_,"HGET %s result",key.c_str());
     if(!reply)return res;
     if(reply->type == REDIS_REPLY_STRING)
     {

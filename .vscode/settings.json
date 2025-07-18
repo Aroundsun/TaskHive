@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "*.proto": "proto3",
+        "condition_variable": "cpp"
+    }
+}

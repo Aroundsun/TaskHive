@@ -22,9 +22,9 @@ message Task {
     string task_id = 1;           // 任务唯一ID
     TaskType type = 2;            // 任务类型
     string content = 3;           // 任务内容（命令或函数名）
-    string worker_id = 9;         // 执行器ID
-    TaskStatus status = 10;       // 任务状态
-    map<string, string> metadata = 11; // 任务的参数信息
+    string worker_id = 4;         // 执行器ID
+    TaskStatus status = 5;       // 任务状态
+    map<string, string> metadata = 6; // 任务的参数信息  命令行——> parm1:-r  函数-> 类型：值
 }
 
 // 执行结果结构
@@ -51,7 +51,7 @@ message WorkerHeartbeat {
 }
 
 message SchedulerHeartbeat{
-    string scheduler_id = 1;
+    string scheduler_id = 1; 
     string scheduler_ip = 2;
     int32 scheduler_port = 3;
     int32 timetamp = 4;

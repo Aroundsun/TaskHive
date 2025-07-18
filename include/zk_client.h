@@ -1,9 +1,11 @@
 #pragma once
 #include <string>
+#include <vector>
+#include <iostream>
 extern "C" {
 #include <zookeeper/zookeeper.h>
 }
-
+#include<shared_mutex>
 
 class ZkClient
 {
@@ -26,6 +28,9 @@ public:
     // 删除节点
     bool deleteNode(const std::string &path);
 
+    // 获取这个path 下所有节点
+    std::vector<std::string> getAllNode(const std::string &path);
+
     // 判断节点是否存在
     bool exists(const std::string &path);
 
@@ -41,20 +46,21 @@ private:
 
             if (state == ZOO_CONNECTED_STATE) //连接成功
             {
-                
+                std::cout << "连接成功" << std::endl;
             }
             else if (state == ZOO_NOTCONNECTED_STATE) //连接失败
             {
-
+                std::cout << "连接失败" << std::endl;
             }
             else if (state == ZOO_EXPIRED_SESSION_STATE) //回话过期
             {
-
+                std::cout << "回话过期" << std::endl;
                 zookeeper_close(zkH);
             }
         }
     }
 private:
     zhandle_t *zh_;
+    std::shared_mutex mtx_;
 
 };
