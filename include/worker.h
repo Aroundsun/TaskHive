@@ -9,21 +9,7 @@
 #include <condition_variable>
 #include <thread>
 
-//配置信息
-//工作端ID
-const std::string WORKER_ID = "worker-1";
-//zk 地址
-const std::string WORKER_ZK_ADDR = "127.0.0.1:2181";
-//zk 路径
-const std::string WORKER_ZK_PATH = "TaskHive/workers";
-//zk 节点
-const std::string WORKER_ZK_NODE = "worker-1";
 
-//rabbitmq配置
-const std::string RABBITMQ_HOST = "127.0.0.1";
-const int RABBITMQ_PORT = 5672;
-const std::string RABBITMQ_USER = "guest";
-const std::string RABBITMQ_PASSWORD = "guest";
 
 
 

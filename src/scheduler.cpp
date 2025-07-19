@@ -11,7 +11,8 @@
 //待配置信息
 //zk配置
 const std::string ZK_HOST = "127.0.0.1:2181";
-const std::string ZK_PATH = "TaskHive/schedulers";
+const std::string ZK_ROOT_PATH = "/TaskHive";
+const std::string ZK_PATH = ZK_ROOT_PATH + "/schedulers";
 const std::string ZK_NODE = "scheduler-1";
 //redis配置
 const std::string REDIS_HOST = "127.0.0.1";
@@ -71,7 +72,21 @@ void scheduler::init() {
             std::cerr << "连接Zookeeper失败: " << ZK_HOST << std::endl;
             return;
         }
-        
+        //检查根节点是否存在
+        if(!zkcli_->exists(ZK_PATH))
+        {
+            //创建根节点
+            if(!zkcli_->createNode(ZK_ROOT_PATH, "",ZOO_PERSISTENT))
+            {
+                std::cerr << "创建Zookeeper根节点失败" << std::endl;
+                return;
+            }
+            if(!zkcli_->createNode(ZK_PATH, "",ZOO_PERSISTENT))
+            {
+                std::cerr << "创建Zookeeper节点失败" << std::endl;
+                return;
+            }
+        }
         // 初始化zk节点
         std::string heartbeat_data;
         taskscheduler::SchedulerHeartbeat heartbeat;
@@ -87,8 +102,8 @@ void scheduler::init() {
         }
         //将心跳数据序列化
         heartbeat.SerializeToString(&heartbeat_data);
-        
-        if (!zkcli_->createNode(ZK_PATH + "/" + ZK_NODE, heartbeat_data)) {
+        //创建当前调度器节点 --临时节点
+        if (!zkcli_->createNode(ZK_PATH + "/" + ZK_NODE, heartbeat_data,ZOO_EPHEMERAL)) {
             std::cerr << "创建Zookeeper节点失败" << std::endl;
         }
         
@@ -103,12 +118,15 @@ void scheduler::init() {
         if (!scheduler_task_queue_->connect(RABBITMQ_HOST, RABBITMQ_PORT, RABBITMQ_USER, RABBITMQ_PASSWORD)) {
             std::cerr << "连接RabbitMQ任务队列失败" << std::endl;
         }
-        
+        //debug
+        std::cout<<"============scheduler_task_queue_连接成功"<<std::endl;
         scheduler_task_result_queue_ = std::make_shared<MySchedulerResultQueue>();
         if (!scheduler_task_result_queue_->connect(RABBITMQ_HOST, RABBITMQ_PORT, RABBITMQ_USER, RABBITMQ_PASSWORD)) {
             std::cerr << "连接RabbitMQ结果队列失败" << std::endl;
         }
-        
+        //debug
+        std::cout<<"============scheduler_task_result_queue_连接成功"<<std::endl;
+
         std::cout << "调度器初始化完成" << std::endl;
     } catch (const std::exception& e) {
         std::cerr << "初始化调度器失败: " << e.what() << std::endl;
@@ -205,7 +223,8 @@ void scheduler::receive_task() {
             close(connfd);
             continue;
         }
-        
+        std::cout<<"============len: "<<len<<std::endl;
+        std::cout<<"============buffer: "<<buffer<<std::endl;
         if (len == 0) {
             close(connfd);
             continue;
@@ -218,15 +237,27 @@ void scheduler::receive_task() {
             close(connfd);
             continue;
         }
+
+        //查看解析结果
+        std::cout<<"============task: "<<task.task_id()<<std::endl;
+        std::cout<<"============task: "<<task.content()<<std::endl;
+        std::cout<<"============task: "<<task.type()<<std::endl;
+        for(auto& item : task.metadata())
+        {
+            std::cout<<"============task metadata: "<<item.first<<" "<<item.second<<std::endl;
+        }
         // 将任务添加到待分发的任务队列
+        
         {
             std::lock_guard<std::mutex> lock(pending_tasks_mutex_);
             pending_tasks_.push(task);
+            //debug
+            std::cout<<"============pending_tasks_.size(): "<<pending_tasks_.size()<<std::endl;
             //通知待提交的任务队列有任务
             pending_tasks_queue_not_empty_.notify_one();
         }
     }
-    close(sockfd);
+    
 }
 // 提交任务实现
 void scheduler::submit_task() {
@@ -245,9 +276,12 @@ void scheduler::submit_task() {
         if(!pending_tasks_.empty())
         {
             //获取任务
+            
             task = pending_tasks_.front();
             pending_tasks_.pop();
             //提交任务到rabbitmq
+            //debug
+            std::cout<<"============提交任务到rabbitmq"<<std::endl;
             scheduler_task_queue_->publishTask(task);
         }
         if(!running_ && pending_tasks_.empty())
@@ -260,11 +294,14 @@ void scheduler::submit_task() {
 // 获取任务结果实现
 void scheduler::get_task_result() {
     //消费rabbitmq中的任务结果
-    scheduler_task_result_queue_->consumeResult([this](taskscheduler::TaskResult& result){
-        //将任务结果保存到redis
-        rediscli_->setTaskResult(result.task_id(), result.output(), 3600);
-    });
-    
+    try {
+        scheduler_task_result_queue_->consumeResult([this](taskscheduler::TaskResult& result){
+            //将任务结果保存到redis
+            rediscli_->setTaskResult(result.task_id(), result.output(), 3600);
+        });
+    } catch (const std::exception& e) {
+        std::cerr << "获取任务结果失败: " << e.what() << std::endl;
+    }
 }
 // 上报心跳实现
 void scheduler::report_heartbeat() {

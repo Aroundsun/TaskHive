@@ -12,7 +12,7 @@ int main() {
     
     //创建以一个任务
     taskscheduler::Task task;
-    task.set_task_id("1234567890");
+    task.set_task_id("task-1");
     task.set_type(taskscheduler::TaskType::FUNCTION);
     task.set_content("add_numbers");
     task.mutable_metadata()->insert({"a","1"});
@@ -26,9 +26,15 @@ int main() {
     std::this_thread::sleep_for(std::chrono::seconds(10));
     
     //获取任务结果
-    taskscheduler::TaskResult task_result = client.get_task_result(task_id);
-    std::cout << "任务结果: " << task_result.output() << std::endl;
+    for(int i = 0 ;i<100;++i)
+    {
+        //阻塞等待任务结果 等10秒
+        std::this_thread::sleep_for(std::chrono::seconds(i));
+        //获取任务结果
+        taskscheduler::TaskResult task_result = client.get_task_result(task_id);
+        std::cout << "任务结果: " << task_result.output() << std::endl;
+    }
+
     
-    std::cout << "客户端已退出" << std::endl;
     return 0;
 }

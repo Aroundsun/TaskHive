@@ -301,4 +301,5 @@ CMakeFiles/client.dir/src/client.cpp.o: \
  /usr/include/aarch64-linux-gnu/bits/getopt_posix.h \
  /usr/include/aarch64-linux-gnu/bits/getopt_core.h \
  /usr/include/aarch64-linux-gnu/bits/unistd_ext.h \
- /usr/include/linux/close_range.h
+ /usr/include/linux/close_range.h /usr/include/arpa/inet.h \
+ /usr/include/netinet/in.h /usr/include/aarch64-linux-gnu/bits/in.h

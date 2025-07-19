@@ -172,7 +172,7 @@ worker_EXTERNAL_OBJECTS =
 /home/admin_xhy/TaskHive/bin/worker: CMakeFiles/worker.dir/src/function_lib.cpp.o
 /home/admin_xhy/TaskHive/bin/worker: CMakeFiles/worker.dir/proto/task.pb.cc.o
 /home/admin_xhy/TaskHive/bin/worker: CMakeFiles/worker.dir/build.make
-/home/admin_xhy/TaskHive/bin/worker: /home/admin_xhy/TaskHive/lib/libmyfuncs.so
+/home/admin_xhy/TaskHive/bin/worker: libmyfuncs.so
 /home/admin_xhy/TaskHive/bin/worker: CMakeFiles/worker.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/admin_xhy/TaskHive/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Linking CXX executable /home/admin_xhy/TaskHive/bin/worker"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/worker.dir/link.txt --verbose=$(VERBOSE)

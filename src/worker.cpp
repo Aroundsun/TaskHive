@@ -9,6 +9,21 @@
 const std::string WORKER_HOST = "127.0.0.1";
 const int WORKER_PORT = 12346;
 
+//配置信息
+//工作端ID
+const std::string WORKER_ID = "worker-1";
+//zk 地址
+const std::string WORKER_ZK_ADDR = "127.0.0.1:2181";
+const std::string ZK_ROOT_PATH = "/TaskHive";
+const std::string ZK_PATH = ZK_ROOT_PATH + "/workers";
+const std::string ZK_NODE = "worker-1";
+
+//rabbitmq配置
+const std::string RABBITMQ_HOST = "127.0.0.1";
+const int RABBITMQ_PORT = 5672;
+const std::string RABBITMQ_USER = "guest";
+const std::string RABBITMQ_PASSWORD = "guest";
+
 // 函数库
 const char *FUNCTION_LIB = "libmyfuncs.so";
 // 能力描述
@@ -33,7 +48,27 @@ void Worker::init()
 {
     // 初始化zk客户端
     zkcli_ = std::make_shared<ZkClient>();
-    zkcli_->connect(WORKER_ZK_ADDR);
+    if(!zkcli_->connect(WORKER_ZK_ADDR))    
+    {
+        std::cerr << "连接Zookeeper失败: " << WORKER_ZK_ADDR << std::endl;
+        return;
+    }
+    //检查根节点是否存在
+    if(!zkcli_->exists(ZK_PATH))
+    {
+        //创建根节点
+        if(!zkcli_->createNode(ZK_ROOT_PATH, "",ZOO_PERSISTENT))
+        {
+            std::cerr << "创建项目根节点失败" << std::endl;
+            return;
+        }
+        //创建节点
+        if(!zkcli_->createNode(ZK_PATH, "",ZOO_PERSISTENT))
+        {
+            std::cerr << "创建worker根节点失败" << std::endl;
+            return;
+        }
+    }
     // 初始化节点
     std::string heartbeat_data;
     taskscheduler::WorkerHeartbeat heartbeat;
@@ -49,14 +84,25 @@ void Worker::init()
     }
     // 将节点数据序列化
     heartbeat.SerializeToString(&heartbeat_data);
-    zkcli_->createNode(WORKER_ZK_PATH + "/" + WORKER_ID, heartbeat_data, ZOO_PERSISTENT);
+    //创建当前工作端节点 --临时节点
+    if(!zkcli_->createNode(ZK_PATH + "/" + ZK_NODE, heartbeat_data, ZOO_EPHEMERAL))
+    {
+        std::cerr << "创建Zookeeper节点失败" << std::endl;
+        return;
+    }
 
     // 初始化工作端任务队列
     worker_task_queue_ = std::make_shared<MyWorkerTaskQueue>();
-    worker_task_queue_->connect(RABBITMQ_HOST, RABBITMQ_PORT, RABBITMQ_USER, RABBITMQ_PASSWORD);
+    if (!worker_task_queue_->connect(RABBITMQ_HOST, RABBITMQ_PORT, RABBITMQ_USER, RABBITMQ_PASSWORD)) {
+        std::cerr << "连接RabbitMQ任务队列失败" << std::endl;
+        return;
+    }
     // 初始化工作端任务结果队列
     worker_result_queue_ = std::make_shared<MyWorkerResultQueue>();
-    worker_result_queue_->connect(RABBITMQ_HOST, RABBITMQ_PORT, RABBITMQ_USER, RABBITMQ_PASSWORD);
+    if (!worker_result_queue_->connect(RABBITMQ_HOST, RABBITMQ_PORT, RABBITMQ_USER, RABBITMQ_PASSWORD)) {
+        std::cerr << "连接RabbitMQ结果队列失败" << std::endl;
+        return;
+    }
 }
 
 void Worker::start()
@@ -66,18 +112,14 @@ void Worker::start()
     running_ = true;
 
     // 启动上报心跳线程
-    report_heartbeat_thread_ = std::thread([this]()
-                                           { report_heartbeat(); });
+    report_heartbeat_thread_ = std::thread(&Worker::report_heartbeat, this);
 
     // 启动接收任务线程
-    receive_task_thread_ = std::thread([this]()
-                                       { receive_task(); });
+    receive_task_thread_ = std::thread(&Worker::receive_task, this);
     // 启动执行任务线程
-    exec_task_thread_ = std::thread([this]()
-                                    { exec_task(); });
+    exec_task_thread_ = std::thread(&Worker::exec_task, this);
     // 启动消费任务结果线程
-    consume_task_result_thread_ = std::thread([this]()
-                                              { report_task_result(); });
+    consume_task_result_thread_ = std::thread(&Worker::report_task_result, this);
 }
 
 void Worker::stop()
@@ -86,12 +128,10 @@ void Worker::stop()
     {
         return;
     }
-    return;
     running_ = false;
     // 停止上报心跳线程
     report_heartbeat_thread_.join();
-    // 删除zk节点数据
-    zkcli_->deleteNode(WORKER_ZK_PATH + "/" + WORKER_ID);
+
     // 停止接收任务线程
     if (receive_task_thread_.joinable())
         receive_task_thread_.join();
@@ -115,16 +155,26 @@ void Worker::stop()
 
 void Worker::receive_task()
 {
+    //debug
+    std::cout<<"============开始接收任务"<<std::endl;
     // 接收任务实现
-    worker_task_queue_->consumeTask(
-        [this](const taskscheduler::Task &task)
-        {
-            // 将任务添加到待执行任务缓存队列
-            std::lock_guard<std::mutex> lock(pending_tasks_mutex_);
-            pending_tasks_.push(task);
-            // 通知执行任务线程
-            pending_tasks_queue_not_empty_.notify_one();
-        });
+    try {
+        worker_task_queue_->consumeTask(
+            [this](const taskscheduler::Task &task)
+            {
+                //debug
+                std::cout<<"============接收任务"<<std::endl;
+                // 将任务添加到待执行任务缓存队列
+                std::lock_guard<std::mutex> lock(pending_tasks_mutex_);
+                pending_tasks_.push(task);
+                //debug
+                std::cout<<"============pending_tasks_.size(): "<<pending_tasks_.size()<<std::endl;
+                // 通知执行任务线程
+                pending_tasks_queue_not_empty_.notify_one();
+            });
+    } catch (const std::exception& e) {
+        std::cerr << "接收任务失败: " << e.what() << std::endl;
+    }
 }
 
 // 监听任务结果缓存队列
@@ -174,7 +224,7 @@ void Worker::report_heartbeat()
         // 将节点数据序列化
         heartbeat.SerializeToString(&heartbeat_data);
         // 修改zk节点数据
-        zkcli_->setNodeData(WORKER_ZK_PATH + "/" + WORKER_ID, heartbeat_data);
+        zkcli_->setNodeData(ZK_PATH + "/" + ZK_NODE, heartbeat_data);
         // 睡眠10秒
         std::this_thread::sleep_for(std::chrono::seconds(10));
     }
@@ -229,8 +279,13 @@ std::string exec_func(const std::string &func, const std::map<std::string, std::
     std::string param_json = Json::writeString(writer, root);
 
     // 4. 调用函数
+    //debug
+    std::cout<<"============调用函数"<<std::endl;
     const char *result = f(param_json.c_str());
     std::string ret = result ? result : "";
+    //debug
+    std::cout<<"============函数执行结果: "<<ret<<std::endl;
+
 
     // 5. 关闭动态库
     dlclose(handle);
@@ -282,6 +337,7 @@ void Worker::exec_task()
                 {
                     task_result.set_output(result);
                     task_result.set_status(taskscheduler::TaskStatus::SUCCESS);
+
                 }
                 else
                 {

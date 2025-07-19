@@ -1,8 +1,8 @@
 file(REMOVE_RECURSE
-  "/home/admin_xhy/TaskHive/lib/libmyfuncs.pdb"
-  "/home/admin_xhy/TaskHive/lib/libmyfuncs.so"
   "CMakeFiles/myfuncs.dir/src/function_lib.cpp.o"
   "CMakeFiles/myfuncs.dir/src/function_lib.cpp.o.d"
+  "libmyfuncs.pdb"
+  "libmyfuncs.so"
 )
 
 # Per-language clean rules from dependency scanning.

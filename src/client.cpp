@@ -1,6 +1,9 @@
 #include"client.h"
 #include <unistd.h>
-
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <iostream>
+#include <thread>
 //zk配置
 const std::string ZK_HOST = "127.0.0.1:2181";
 const std::string ZK_PATH = "TaskHive/schedulers";
@@ -36,6 +39,7 @@ void Client::init(){
 //启动函数
 void Client::start()
 {
+    
     if(running_)
         return;
     running_ = true;
@@ -91,6 +95,9 @@ void Client::submit_task_threadfunction()
             submit_undistribution_task_.pop();
             //获取一个调度节点ip-port
             std::pair<std::string,int> hearly_scheduer_host = get_hearly_secheduler_node();
+            std::cout<<"ip-----------"<<hearly_scheduer_host.first<<"----port"<<hearly_scheduer_host.second;
+            //打印任务
+            std::cout<<"task: "<<task.task_id()<<std::endl;
             //提交任务到调度器
             try
             {
@@ -193,7 +200,7 @@ std::pair<std::string,int> Client::get_hearly_secheduler_node()
 {
     return {"127.0.0.1",12345};
 }
-
+///////////////外部接口//////////////////
 //提交一个任务
 void Client::submit_one_task(taskscheduler::Task task)
 {
@@ -217,8 +224,11 @@ void Client::submit_more_task(std::vector<taskscheduler::Task> taskarray)
 }
 
 //通过socket 提交任务到调度器
-void Client::socket_submit_task_to_scheduler(taskscheduler::Task& task,std::pair<std::string,int>& scheduer_host)
+    void Client::socket_submit_task_to_scheduler(taskscheduler::Task& task,std::pair<std::string,int>& scheduer_host)
 {
+    //  开始提交
+    std::cout<<"scheduer_host" << scheduer_host.first<<" "<<scheduer_host.second <<std::endl;
+    
     //通过socket到调度器
     int sockfd = socket(AF_INET,SOCK_STREAM,0);
     if(sockfd == -1)
@@ -226,13 +236,20 @@ void Client::socket_submit_task_to_scheduler(taskscheduler::Task& task,std::pair
         throw std::runtime_error("socket create error!!!");
     }
     //连接调度器
-    if(connect(sockfd,(struct sockaddr*)&scheduer_host,sizeof(scheduer_host)) == -1)
+    // 创建一个sockaddr_in 结构体
+    struct sockaddr_in server_addr;
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(scheduer_host.second);
+    server_addr.sin_addr.s_addr = inet_addr(scheduer_host.first.c_str());
+    // 连接调度器
+    if(connect(sockfd,(struct sockaddr*)&server_addr,sizeof(server_addr)) == -1)
     {
         throw std::runtime_error("connect to scheduler error!!!");
     }
     //任务序列化成string
     std::string task_str;
     task.SerializeToString(&task_str);
+    std::cout<<"task_str: "<<task_str<<std::endl;
     //发送任务到调度器  
     if(send(sockfd,task_str.c_str(),task_str.size(),0) == -1)
     {

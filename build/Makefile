@@ -168,6 +168,58 @@ client/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/build
 .PHONY : client/fast
 
+#=============================================================================
+# Target rules for targets named test_redis
+
+# Build rule for target.
+test_redis: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test_redis
+.PHONY : test_redis
+
+# fast build rule for target.
+test_redis/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_redis.dir/build.make CMakeFiles/test_redis.dir/build
+.PHONY : test_redis/fast
+
+#=============================================================================
+# Target rules for targets named test_zkclient
+
+# Build rule for target.
+test_zkclient: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test_zkclient
+.PHONY : test_zkclient
+
+# fast build rule for target.
+test_zkclient/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_zkclient.dir/build.make CMakeFiles/test_zkclient.dir/build
+.PHONY : test_zkclient/fast
+
+#=============================================================================
+# Target rules for targets named test_message_queue
+
+# Build rule for target.
+test_message_queue: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test_message_queue
+.PHONY : test_message_queue
+
+# fast build rule for target.
+test_message_queue/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_message_queue.dir/build.make CMakeFiles/test_message_queue.dir/build
+.PHONY : test_message_queue/fast
+
+#=============================================================================
+# Target rules for targets named tests
+
+# Build rule for target.
+tests: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 tests
+.PHONY : tests
+
+# fast build rule for target.
+tests/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/tests.dir/build.make CMakeFiles/tests.dir/build
+.PHONY : tests/fast
+
 proto/task.pb.o: proto/task.pb.cc.o
 .PHONY : proto/task.pb.o
 
@@ -176,6 +228,7 @@ proto/task.pb.cc.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/scheduler.dir/build.make CMakeFiles/scheduler.dir/proto/task.pb.cc.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/worker.dir/build.make CMakeFiles/worker.dir/proto/task.pb.cc.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/proto/task.pb.cc.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_message_queue.dir/build.make CMakeFiles/test_message_queue.dir/proto/task.pb.cc.o
 .PHONY : proto/task.pb.cc.o
 
 proto/task.pb.i: proto/task.pb.cc.i
@@ -186,6 +239,7 @@ proto/task.pb.cc.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/scheduler.dir/build.make CMakeFiles/scheduler.dir/proto/task.pb.cc.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/worker.dir/build.make CMakeFiles/worker.dir/proto/task.pb.cc.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/proto/task.pb.cc.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_message_queue.dir/build.make CMakeFiles/test_message_queue.dir/proto/task.pb.cc.i
 .PHONY : proto/task.pb.cc.i
 
 proto/task.pb.s: proto/task.pb.cc.s
@@ -196,6 +250,7 @@ proto/task.pb.cc.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/scheduler.dir/build.make CMakeFiles/scheduler.dir/proto/task.pb.cc.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/worker.dir/build.make CMakeFiles/worker.dir/proto/task.pb.cc.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/proto/task.pb.cc.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_message_queue.dir/build.make CMakeFiles/test_message_queue.dir/proto/task.pb.cc.s
 .PHONY : proto/task.pb.cc.s
 
 src/client.o: src/client.cpp.o
@@ -281,6 +336,7 @@ src/redis_client.cpp.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/scheduler.dir/build.make CMakeFiles/scheduler.dir/src/redis_client.cpp.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/worker.dir/build.make CMakeFiles/worker.dir/src/redis_client.cpp.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/src/redis_client.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_redis.dir/build.make CMakeFiles/test_redis.dir/src/redis_client.cpp.o
 .PHONY : src/redis_client.cpp.o
 
 src/redis_client.i: src/redis_client.cpp.i
@@ -291,6 +347,7 @@ src/redis_client.cpp.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/scheduler.dir/build.make CMakeFiles/scheduler.dir/src/redis_client.cpp.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/worker.dir/build.make CMakeFiles/worker.dir/src/redis_client.cpp.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/src/redis_client.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_redis.dir/build.make CMakeFiles/test_redis.dir/src/redis_client.cpp.i
 .PHONY : src/redis_client.cpp.i
 
 src/redis_client.s: src/redis_client.cpp.s
@@ -301,6 +358,7 @@ src/redis_client.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/scheduler.dir/build.make CMakeFiles/scheduler.dir/src/redis_client.cpp.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/worker.dir/build.make CMakeFiles/worker.dir/src/redis_client.cpp.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/src/redis_client.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_redis.dir/build.make CMakeFiles/test_redis.dir/src/redis_client.cpp.s
 .PHONY : src/redis_client.cpp.s
 
 src/scheduler.o: src/scheduler.cpp.o
@@ -407,6 +465,7 @@ src/zk_client.cpp.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/scheduler.dir/build.make CMakeFiles/scheduler.dir/src/zk_client.cpp.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/worker.dir/build.make CMakeFiles/worker.dir/src/zk_client.cpp.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/src/zk_client.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_zkclient.dir/build.make CMakeFiles/test_zkclient.dir/src/zk_client.cpp.o
 .PHONY : src/zk_client.cpp.o
 
 src/zk_client.i: src/zk_client.cpp.i
@@ -417,6 +476,7 @@ src/zk_client.cpp.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/scheduler.dir/build.make CMakeFiles/scheduler.dir/src/zk_client.cpp.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/worker.dir/build.make CMakeFiles/worker.dir/src/zk_client.cpp.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/src/zk_client.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_zkclient.dir/build.make CMakeFiles/test_zkclient.dir/src/zk_client.cpp.i
 .PHONY : src/zk_client.cpp.i
 
 src/zk_client.s: src/zk_client.cpp.s
@@ -427,7 +487,80 @@ src/zk_client.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/scheduler.dir/build.make CMakeFiles/scheduler.dir/src/zk_client.cpp.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/worker.dir/build.make CMakeFiles/worker.dir/src/zk_client.cpp.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/src/zk_client.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_zkclient.dir/build.make CMakeFiles/test_zkclient.dir/src/zk_client.cpp.s
 .PHONY : src/zk_client.cpp.s
+
+test/test_message_queue.o: test/test_message_queue.cpp.o
+.PHONY : test/test_message_queue.o
+
+# target to build an object file
+test/test_message_queue.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_message_queue.dir/build.make CMakeFiles/test_message_queue.dir/test/test_message_queue.cpp.o
+.PHONY : test/test_message_queue.cpp.o
+
+test/test_message_queue.i: test/test_message_queue.cpp.i
+.PHONY : test/test_message_queue.i
+
+# target to preprocess a source file
+test/test_message_queue.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_message_queue.dir/build.make CMakeFiles/test_message_queue.dir/test/test_message_queue.cpp.i
+.PHONY : test/test_message_queue.cpp.i
+
+test/test_message_queue.s: test/test_message_queue.cpp.s
+.PHONY : test/test_message_queue.s
+
+# target to generate assembly for a file
+test/test_message_queue.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_message_queue.dir/build.make CMakeFiles/test_message_queue.dir/test/test_message_queue.cpp.s
+.PHONY : test/test_message_queue.cpp.s
+
+test/test_redis.o: test/test_redis.cpp.o
+.PHONY : test/test_redis.o
+
+# target to build an object file
+test/test_redis.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_redis.dir/build.make CMakeFiles/test_redis.dir/test/test_redis.cpp.o
+.PHONY : test/test_redis.cpp.o
+
+test/test_redis.i: test/test_redis.cpp.i
+.PHONY : test/test_redis.i
+
+# target to preprocess a source file
+test/test_redis.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_redis.dir/build.make CMakeFiles/test_redis.dir/test/test_redis.cpp.i
+.PHONY : test/test_redis.cpp.i
+
+test/test_redis.s: test/test_redis.cpp.s
+.PHONY : test/test_redis.s
+
+# target to generate assembly for a file
+test/test_redis.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_redis.dir/build.make CMakeFiles/test_redis.dir/test/test_redis.cpp.s
+.PHONY : test/test_redis.cpp.s
+
+test/test_zkclient.o: test/test_zkclient.cpp.o
+.PHONY : test/test_zkclient.o
+
+# target to build an object file
+test/test_zkclient.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_zkclient.dir/build.make CMakeFiles/test_zkclient.dir/test/test_zkclient.cpp.o
+.PHONY : test/test_zkclient.cpp.o
+
+test/test_zkclient.i: test/test_zkclient.cpp.i
+.PHONY : test/test_zkclient.i
+
+# target to preprocess a source file
+test/test_zkclient.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_zkclient.dir/build.make CMakeFiles/test_zkclient.dir/test/test_zkclient.cpp.i
+.PHONY : test/test_zkclient.cpp.i
+
+test/test_zkclient.s: test/test_zkclient.cpp.s
+.PHONY : test/test_zkclient.s
+
+# target to generate assembly for a file
+test/test_zkclient.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_zkclient.dir/build.make CMakeFiles/test_zkclient.dir/test/test_zkclient.cpp.s
+.PHONY : test/test_zkclient.cpp.s
 
 # Help Target
 help:
@@ -437,9 +570,13 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
+	@echo "... tests"
 	@echo "... client"
 	@echo "... myfuncs"
 	@echo "... scheduler"
+	@echo "... test_message_queue"
+	@echo "... test_redis"
+	@echo "... test_zkclient"
 	@echo "... worker"
 	@echo "... proto/task.pb.o"
 	@echo "... proto/task.pb.i"
@@ -471,6 +608,15 @@ help:
 	@echo "... src/zk_client.o"
 	@echo "... src/zk_client.i"
 	@echo "... src/zk_client.s"
+	@echo "... test/test_message_queue.o"
+	@echo "... test/test_message_queue.i"
+	@echo "... test/test_message_queue.s"
+	@echo "... test/test_redis.o"
+	@echo "... test/test_redis.i"
+	@echo "... test/test_redis.s"
+	@echo "... test/test_zkclient.o"
+	@echo "... test/test_zkclient.i"
+	@echo "... test/test_zkclient.s"
 .PHONY : help
 
 

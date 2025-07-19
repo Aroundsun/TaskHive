@@ -22,6 +22,9 @@ bool ZkClient::connect(const std::string& host_port, int timeout) {
         return false;
     return true;
 }
+//检查持久节点是否存在
+
+
 /*
 节点类型查阅表
 ZOO_PERSISTENT	持久节点（默认）
@@ -31,6 +34,12 @@ ZOO_PERSISTENT_SEQUENTIAL	持久顺序节点
 ZOO_EPHEMERAL_SEQUENTIAL   	临时顺序节点*/
 
 bool ZkClient::createNode(const std::string& path, const std::string& data, int flags) {
+    //检查节点是否存在
+    if(exists(path))
+    {
+        return true;
+    }
+
     char realpath[128];
     std::unique_lock<std::shared_mutex> lock(mtx_); //独占锁- 写锁
 
@@ -41,12 +50,16 @@ bool ZkClient::createNode(const std::string& path, const std::string& data, int 
                             flags,
                             realpath,
                             sizeof(realpath)-1);
+
     if(is_OK != ZOK)
     {
+
         return false;
     }
     return true;
 }
+
+
 /*
 zoo_set(zhandle_t *zh, const char *path, const char *buffer,
                    int buflen, int version);

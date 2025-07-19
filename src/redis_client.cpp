@@ -1,6 +1,7 @@
 #include "redis_client.h"
 #include <cstring>
-
+#include <iostream>
+#include <ostream>
 RedisClient::RedisClient() : context_(nullptr), connected_(false) {}
 
 RedisClient::~RedisClient()
@@ -50,9 +51,9 @@ bool RedisClient::connect(const std::string &host, int port, const std::string &
             throw std::runtime_error(error_msg);
             return false;
         }
-
         freeReplyObject(reply);
     }
+    std::cout << "redis 连接成功！！！！！！！！！！！" << std::endl;
 
     connected_ = true;
     return true;
@@ -69,26 +70,32 @@ bool RedisClient::setTaskResult(const std::string &task_id, const std::string &r
 
     if(!is_ok) return false;
 
+
     //设置过期时间
     reply = (redisReply*)redisCommand(context_,"EXPIRE %s %d",key.c_str(),expire_seconds);
     is_ok = (reply && reply->type == REDIS_REPLY_INTEGER && reply->integer == 1);
     if(reply) freeReplyObject(reply);
     if(!is_ok) return false;
-
+    std::cout<<"setTaskResult 成功！！！！！！！！！！！"<<std::endl;
+    std::cout<<"key: "<<key<<std::endl;
+    std::cout<<"result: "<<result<<std::endl;
+    std::cout<<"expire_seconds: "<<expire_seconds<<std::endl;
     return is_ok;
 }
 
 std::string RedisClient::getTaskResult(const std::string &task_id)
 {
     std::string res = "NO_RESULT";
-
     // 从哈希表查询任务结果
-    std::string key = "task_result:" + task_id;
+    std::string key = task_id;
     redisReply* reply = (redisReply*)redisCommand(context_,"HGET %s result",key.c_str());
     if(!reply)return res;
     if(reply->type == REDIS_REPLY_STRING)
     {
         res = reply->str;
+        // // 打印结果
+        // std::cout<<"getTaskResult 成功！！！！！！！！！！！"<<std::endl;
+        // std::cout<<"res: "<<res<<std::endl;
     }
     if(reply)freeReplyObject(reply);
     return res;

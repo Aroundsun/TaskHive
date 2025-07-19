@@ -1,0 +1,123 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"jsonFile" : "directory-.-Debug-f5ebdc15457944623624.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.10"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5,
+						6,
+						7
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "MyProject",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5,
+						6,
+						7
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "client::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-client-Debug-b4f4d7c60967003e5d9d.json",
+					"name" : "client",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "myfuncs::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-myfuncs-Debug-6b392543b4e3c3a26eeb.json",
+					"name" : "myfuncs",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "scheduler::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-scheduler-Debug-ea8ade3a35c9e8194a68.json",
+					"name" : "scheduler",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "test_message_queue::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-test_message_queue-Debug-7947ed96685379873389.json",
+					"name" : "test_message_queue",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "test_redis::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-test_redis-Debug-602efc3adb3b8aab8129.json",
+					"name" : "test_redis",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "test_zkclient::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-test_zkclient-Debug-c2de9ec9a5288a2a6621.json",
+					"name" : "test_zkclient",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-tests-Debug-310519aa8a7a7abf5478.json",
+					"name" : "tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "worker::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-worker-Debug-40f7955c4b7ea0d6d7e0.json",
+					"name" : "worker",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/home/admin_xhy/TaskHive/build",
+		"source" : "/home/admin_xhy/TaskHive"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 6
+	}
+}

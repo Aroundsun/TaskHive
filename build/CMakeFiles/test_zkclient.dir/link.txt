@@ -1,0 +1,1 @@
+/usr/bin/aarch64-linux-gnu-g++ -g CMakeFiles/test_zkclient.dir/test/test_zkclient.cpp.o CMakeFiles/test_zkclient.dir/src/zk_client.cpp.o -o /home/admin_xhy/TaskHive/bin/test_zkclient  -lzookeeper_mt -lpthread -ldl 
