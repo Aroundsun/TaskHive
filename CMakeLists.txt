@@ -57,13 +57,8 @@ if(BUILD_TESTS)
     target_link_libraries(test_message_queue PRIVATE ${JSONCPP_LIBRARIES} protobuf rabbitmq pthread dl)
     target_include_directories(test_message_queue PRIVATE ${JSONCPP_INCLUDE_DIRS} ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/proto)
     
-    # 构建函数库测试程序
-    add_executable(test_function_lib test/test_function_lib.cpp)
-    target_link_libraries(test_function_lib PRIVATE ${JSONCPP_LIBRARIES} myfuncs pthread dl)
-    target_include_directories(test_function_lib PRIVATE ${PROJECT_SOURCE_DIR}/include)
-    
     # 创建测试目标组
-    add_custom_target(tests DEPENDS test_redis test_zkclient test_function_lib)
+    add_custom_target(tests DEPENDS test_redis test_zkclient test_message_queue)
     
     message(STATUS "Test programs will be built")
 else()

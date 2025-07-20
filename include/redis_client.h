@@ -4,7 +4,7 @@
 #include <unordered_map>
 #include <hiredis/hiredis.h>  
 #include <stdexcept> 
-
+#include"task.pb.h"
 class RedisClient {
 public:
     RedisClient();
@@ -14,7 +14,7 @@ public:
     bool connect(const std::string& host, int port, const std::string& password = "");
 
     // 缓存任务结果
-    bool setTaskResult(const std::string& task_id, const std::string& result, int expire_seconds = 3600);
+    bool setTaskResult(const std::string& task_id, const taskscheduler::TaskResult& result, int expire_seconds = 3600);
     
     std::string getTaskResult(const std::string& task_id);
 

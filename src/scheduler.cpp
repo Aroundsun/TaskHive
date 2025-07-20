@@ -297,7 +297,8 @@ void scheduler::get_task_result() {
     try {
         scheduler_task_result_queue_->consumeResult([this](taskscheduler::TaskResult& result){
             //将任务结果保存到redis
-            rediscli_->setTaskResult(result.task_id(), result.output(), 3600);
+            //将任务结果序列化
+            rediscli_->setTaskResult(result.task_id(), result, 3600);
         });
     } catch (const std::exception& e) {
         std::cerr << "获取任务结果失败: " << e.what() << std::endl;

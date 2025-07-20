@@ -1,1 +1,0 @@
-/usr/bin/aarch64-linux-gnu-g++ -g CMakeFiles/test_message_queue.dir/test/test_message_queue.cpp.o CMakeFiles/test_message_queue.dir/proto/task.pb.cc.o -o /home/admin_xhy/TaskHive/bin/test_message_queue  -ljsoncpp -lprotobuf -lrabbitmq -lpthread -ldl 

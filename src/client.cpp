@@ -4,6 +4,8 @@
 #include <sys/socket.h>
 #include <iostream>
 #include <thread>
+#include<json/json.h>
+
 //zk配置
 const std::string ZK_HOST = "127.0.0.1:2181";
 const std::string ZK_PATH = "TaskHive/schedulers";
@@ -131,13 +133,18 @@ void Client::consume_task_resultfunction()
             std::string result = redis_client_->getTaskResult(taskid);
             if(result != "NO_RESULT")
             {
-                taskscheduler::TaskResult taskresult;
                 //反序列化任务结果
+                taskscheduler::TaskResult taskresult;
                 taskresult.ParseFromString(result);
+                //打印任务结果
+                //std::cout << "taskid: " << taskid << " output: " << taskresult.output() << std::endl;
+                //打印任务结果
+                //std::cout << "taskid: " << taskid << result << std::endl;
                 {
                     //添加到任务结果队列
                     std::lock_guard<std::mutex> lock_taskresult(taskresult_mutex_);
                     taskresult_[taskid] = taskresult;
+                    //打印任务结果
                 }
 
                 //从已提交任务id队列中移除
@@ -224,7 +231,7 @@ void Client::submit_more_task(std::vector<taskscheduler::Task> taskarray)
 }
 
 //通过socket 提交任务到调度器
-    void Client::socket_submit_task_to_scheduler(taskscheduler::Task& task,std::pair<std::string,int>& scheduer_host)
+void Client::socket_submit_task_to_scheduler(taskscheduler::Task& task,std::pair<std::string,int>& scheduer_host)
 {
     //  开始提交
     std::cout<<"scheduer_host" << scheduer_host.first<<" "<<scheduer_host.second <<std::endl;
@@ -262,8 +269,11 @@ void Client::submit_more_task(std::vector<taskscheduler::Task> taskarray)
 //根据一个taskid 来查询一个任务结果
 taskscheduler::TaskResult Client::get_task_result(std::string taskid)const
 {
+    //查询结果
+    std::cout<<"开始查询"<<std::endl;
     if(taskresult_.find(taskid) == taskresult_.end())
     {
+        std::cout<<"查不到"<<std::endl;
         return taskscheduler::TaskResult();
     }
     return taskresult_.at(taskid);

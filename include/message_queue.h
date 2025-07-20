@@ -55,11 +55,11 @@ public:
             return false;
         }
         //登陆RabbitMQ
-        amqp_rpc_reply_t login_reply = amqp_login(conn_,
-                                                "/",
-                                                0,
-                                                128*1024,
-                                                30,
+        amqp_rpc_reply_t login_reply = amqp_login(conn_, 
+                                                "/", 
+                                                0, 
+                                                128*1024, 
+                                                30,  
                                                 AMQP_SASL_METHOD_PLAIN,
                                                 mq_user_.c_str(),
                                                 mq_pass_.c_str()
@@ -67,7 +67,6 @@ public:
         if(login_reply.reply_type != AMQP_RESPONSE_NORMAL)
         {
             throw std::runtime_error("MessageQueue: 登陆RabbitMQ 失败");
-            return false;
         }
         //打开channel
         amqp_channel_open(conn_,channel_id_);
@@ -75,24 +74,30 @@ public:
         if(channel_reply.reply_type != AMQP_RESPONSE_NORMAL)
         {
             throw std::runtime_error("MessageQueue: 打开channel失败");
-            return false;
         }
         //声明队列
         amqp_bytes_t queueid = amqp_cstring_bytes(queue_name_.c_str());
-        amqp_queue_declare_ok_t* queue_declare_reply = amqp_queue_declare(conn_, channel_id_, queueid, 0, 1, 0, 0, amqp_empty_table);
+        amqp_queue_declare_ok_t* queue_declare_reply = amqp_queue_declare(
+                                                                    conn_, 
+                                                                    channel_id_, 
+                                                                    queueid, 
+                                                                    0, 
+                                                                    1, 
+                                                                    0,
+                                                                    0, 
+                                                                    amqp_empty_table);
         if(!queue_declare_reply)
         {
+            //获取错误信息
             amqp_rpc_reply_t reply = amqp_get_rpc_reply(conn_);
             if(reply.reply_type != AMQP_RESPONSE_NORMAL)
             {
                 throw std::runtime_error("MessageQueue: 声明队列失败");
-                return false;
             }
         }
         //标记连接成功
         is_connected_ = true;
-        //debug
-        std::cout<<"============连接RabbitMQ成功"<<std::endl;
+
         return true;
     }
     
@@ -115,12 +120,13 @@ public:
     int getChannelId() const { return channel_id_; }
     amqp_connection_state_t getConnection() const { return conn_; }
 protected:
-    std::string queue_name_;
-    std::string mq_host_;
-    int mq_port_ = 0;
-    std::string mq_user_;
-    std::string mq_pass_;
-    amqp_connection_state_t conn_ ;
+    std::string queue_name_{""};
+
+    std::string mq_host_{""};
+    int mq_port_{0};
+    std::string mq_user_{""};
+    std::string mq_pass_{""};
+    amqp_connection_state_t conn_;
     bool is_connected_;
     int channel_id_;
 };
@@ -188,8 +194,7 @@ public:
     MyWorkerTaskQueue(int channel_id = TASK_CHANNEL_ID) : TaskQueue(channel_id) {}
     bool publishTaskImpl(const taskscheduler::Task&) { throw std::runtime_error("Not implemented"); }
     bool consumeTaskImpl(TaskCallback task_cb){
-        //debug
-        std::cout<<"============开始消费任务"<<std::endl;
+
         //检查连接状态
         if(!is_connected_ || !conn_)
         {
@@ -198,42 +203,40 @@ public:
         //声明队列
         //略 消息队列基类connect 函数中已经声明过   
         //重新声明队列确保存在
-        amqp_bytes_t queueid = amqp_cstring_bytes(queue_name_.c_str());
-        amqp_queue_declare_ok_t* queue_declare_reply = amqp_queue_declare(conn_, channel_id_, queueid, 0, 1, 0, 0, amqp_empty_table);
-        if(!queue_declare_reply)
-        {
-            amqp_rpc_reply_t reply = amqp_get_rpc_reply(conn_);
-            if(reply.reply_type != AMQP_RESPONSE_NORMAL)
-            {
-                throw std::runtime_error("WorkerTaskQueue: 声明队列失败");
-                return false;
-            }
-        }
-        std::cout << "WorkerTaskQueue: 队列声明成功: " << queue_name_ << std::endl;
+        // amqp_bytes_t queueid = amqp_cstring_bytes(queue_name_.c_str());
+        // amqp_queue_declare_ok_t* queue_declare_reply = amqp_queue_declare(conn_, channel_id_, queueid, 0, 1, 0, 0, amqp_empty_table);
+        // if(!queue_declare_reply)
+        // {
+        //     amqp_rpc_reply_t reply = amqp_get_rpc_reply(conn_);
+        //     if(reply.reply_type != AMQP_RESPONSE_NORMAL)
+        //     {
+        //         throw std::runtime_error("WorkerTaskQueue: 声明队列失败");
+        //         return false;
+        //     }
+        // }
+        // std::cout << "WorkerTaskQueue: 队列声明成功: " << queue_name_ << std::endl;
         
         //注册消费者
         amqp_basic_consume_ok_t* consume_reply = amqp_basic_consume(conn_,
-                        channel_id_,
-                        amqp_cstring_bytes(queue_name_.c_str()),
-                        amqp_empty_bytes,
-                        0,
-                        1,
-                        0,
-                        amqp_empty_table
-                        );
+                                                                    channel_id_,
+                                                                    amqp_cstring_bytes(queue_name_.c_str()),
+                                                                    amqp_empty_bytes,
+                                                                    0,
+                                                                    1,
+                                                                    0,
+                                                                    amqp_empty_table
+                                                                    );
         if(!consume_reply)
         {
+            //获取错误信息
             amqp_rpc_reply_t reply = amqp_get_rpc_reply(conn_);
             if(reply.reply_type != AMQP_RESPONSE_NORMAL)
             {
-                throw std::runtime_error("WorkerTaskQueue: 注册消费者失败");
-                return false;
+                throw std::runtime_error("WorkerTaskQueue: 注册任务消费失败");
             }
         }
         //监听消费任务
         while(is_connected_){
-            //debug
-            std::cout<<"============监听消费任务"<<std::endl;
             /*
             当成功消费完一条消息后，这些数据其实还在 buffer 里，没有立即释放；
             所以你需要调用 amqp_maybe_release_buffers(conn)，来尝试释放这些已经处理完的网络数据，节省内存。
@@ -241,22 +244,15 @@ public:
             amqp_maybe_release_buffers(conn_);
             //消费消息 -阻塞等待消息
             //debug
-            std::cout<<"============等待消息。。。。。。。。"<<std::endl;
-            
-            // 检查连接状态
-            if(!is_connected_ || !conn_) {
-                std::cerr << "WorkerTaskQueue: 连接已断开" << std::endl;
-                throw std::runtime_error("WorkerTaskQueue: 连接已断开");
-            }
-            
+            std::cout<<"============等待任务消息。。。。。。。。"<<std::endl;
             //定义信封
             amqp_envelope_t envelope;
             memset(&envelope, 0, sizeof(envelope));
-            
+            //消费消息
             amqp_rpc_reply_t ret = amqp_consume_message(conn_, &envelope, nullptr, 0);
-            //debug
-            std::cout<<"============收到消息。。。。。。。。"<<std::endl;
-            std::cout << "WorkerTaskQueue: amqp_consume_message返回类型: " << ret.reply_type << std::endl;
+
+            std::cout<<"============收到任务消息。。。。。。。。"<<std::endl;
+            std::cout <<__FILE__<<":"<<__LINE__<< " amqp_consume_message返回类型: " << ret.reply_type << std::endl;
             if(ret.reply_type == AMQP_RESPONSE_NORMAL){
                 std::cout << "WorkerTaskQueue: 消息接收成功，开始解析" << std::endl;
                 //解析消息
@@ -289,14 +285,7 @@ public:
                 amqp_destroy_envelope(&envelope);
             }
             else {
-                std::cerr << "WorkerTaskQueue: amqp_consume_message失败，返回类型: " << ret.reply_type << std::endl;
-                std::cerr << "WorkerTaskQueue: library_error: " << ret.library_error << std::endl;
-                if(ret.reply_type == AMQP_RESPONSE_LIBRARY_EXCEPTION) {
-                    std::cerr << "WorkerTaskQueue: 库异常" << std::endl;
-                } else if(ret.reply_type == AMQP_RESPONSE_SERVER_EXCEPTION) {
-                    std::cerr << "WorkerTaskQueue: 服务器异常" << std::endl;
-                }
-                throw std::runtime_error("WorkerTaskQueue: 消费消息失败");
+                throw std::runtime_error("WorkerTaskQueue: 消费任务失败");
             }
         }
         //debug
@@ -467,6 +456,7 @@ public:
         //声明队列
         //略 消息队列基类connect 函数中已经声明过
         //注册消费者
+
         amqp_basic_consume_ok_t* consume_reply = amqp_basic_consume(
                         conn_,
                         channel_id_,
@@ -497,6 +487,7 @@ public:
             amqp_envelope_t envelope;
             //消费消息 -阻塞等待消息
             amqp_rpc_reply_t ret = amqp_consume_message(conn_, &envelope, nullptr, 0);
+            std::cout<<"============收到结果消息。。。。。。。。"<<std::endl;
             if(ret.reply_type == AMQP_RESPONSE_NORMAL){
                 //解析消息
                 taskscheduler::TaskResult result;

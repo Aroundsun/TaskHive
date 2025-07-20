@@ -253,14 +253,14 @@ std::string exec_cmd(const std::string &cmd)
 // 执行函数
 std::string exec_func(const std::string &func, const std::map<std::string, std::string> &params)
 {
-    // 1. 打开动态库
+    // 打开动态库
     void *handle = dlopen(FUNCTION_LIB, RTLD_LAZY);
     if (!handle)
     {
         return std::string("dlopen failed: ") + dlerror();
     }
 
-    // 2. 查找函数
+    // 查找函数
     typedef const char *(*func_t)(const char *);
     func_t f = (func_t)dlsym(handle, func.c_str());
     if (!f)
@@ -269,7 +269,7 @@ std::string exec_func(const std::string &func, const std::map<std::string, std::
         return std::string("dlsym failed: ") + dlerror();
     }
 
-    // 3. 参数转json字符串
+    //参数转json字符串
     Json::Value root;
     for (const auto &kv : params)
     {
@@ -277,19 +277,12 @@ std::string exec_func(const std::string &func, const std::map<std::string, std::
     }
     Json::StreamWriterBuilder writer;
     std::string param_json = Json::writeString(writer, root);
-
-    // 4. 调用函数
-    //debug
-    std::cout<<"============调用函数"<<std::endl;
+    // 调用函数
     const char *result = f(param_json.c_str());
     std::string ret = result ? result : "";
-    //debug
-    std::cout<<"============函数执行结果: "<<ret<<std::endl;
 
-
-    // 5. 关闭动态库
+    // 关闭动态库
     dlclose(handle);
-
     return ret;
 }
 // 执行任务实现
@@ -349,14 +342,38 @@ void Worker::exec_task()
             {
                 // 执行函数
                 std::string result = exec_func(context, params);
-                if (result != "")
+                //现在的result是json字符串，需要反序列化
+                Json::Value root;
+                Json::CharReaderBuilder reader;
+                Json::CharReader* reader_ptr = reader.newCharReader();
+                if (!reader_ptr->parse(result.c_str(), result.c_str() + result.size(), &root, nullptr)) {
+                    std::cerr << "JSON 解析失败: " << std::endl;
+                }
+                /*
+                一条json字符串的格式
                 {
-                    task_result.set_output(result);
+                    "success": true,
+                    "message": "字符串反转成功",
+                    "data": "olleh"
+                }
+                {
+                    "success": false,
+                    "message": "字符串反转失败",
+                }
+                */
+                std::string output = root["data"].asString();
+                std::string error_message = root["message"].asString();
+                bool success = root["success"].asBool();
+                delete reader_ptr; //释放内存
+                //反序列化任务结果
+                if (success)
+                {
+                    task_result.set_output(output);
                     task_result.set_status(taskscheduler::TaskStatus::SUCCESS);
                 }
                 else
                 {
-                    task_result.set_error_message("函数执行失败");
+                    task_result.set_error_message(error_message);
                     task_result.set_status(taskscheduler::TaskStatus::FAILED);
                 }
             }

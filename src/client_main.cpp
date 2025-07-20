@@ -15,13 +15,12 @@ int main() {
     task.set_task_id("task-1");
     task.set_type(taskscheduler::TaskType::FUNCTION);
     task.set_content("add_numbers");
-    task.mutable_metadata()->insert({"a","1"});
-    task.mutable_metadata()->insert({"b","2"});
+    task.mutable_metadata()->insert({"a","9"});
+    task.mutable_metadata()->insert({"b","11"});
 
     std::string task_id = task.task_id();
     //提交任务
     client.submit_one_task(task);
-
     //等待10秒
     std::this_thread::sleep_for(std::chrono::seconds(10));
     
@@ -34,7 +33,5 @@ int main() {
         taskscheduler::TaskResult task_result = client.get_task_result(task_id);
         std::cout << "任务结果: " << task_result.output() << std::endl;
     }
-
-    
     return 0;
 }

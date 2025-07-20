@@ -60,11 +60,14 @@ bool RedisClient::connect(const std::string &host, int port, const std::string &
 }
 
 
-bool RedisClient::setTaskResult(const std::string &task_id, const std::string &result, int expire_seconds)
+bool RedisClient::setTaskResult(const std::string &task_id, const taskscheduler::TaskResult &result, int expire_seconds)
 {
     // 使用哈希表存储任务结果
     std::string key = task_id;
-    redisReply* reply = (redisReply*)redisCommand(context_,"HSET %s result %s",key.c_str(),result.c_str());
+    //将result序列化
+    std::string result_data;
+    result.SerializeToString(&result_data);
+    redisReply* reply = (redisReply*)redisCommand(context_,"HSET %s result %s",key.c_str(),result_data.c_str());
     bool is_ok = (reply && (reply->type == REDIS_REPLY_INTEGER || reply->type == REDIS_REPLY_STATUS));
     if(reply) freeReplyObject(reply);
 
@@ -76,10 +79,7 @@ bool RedisClient::setTaskResult(const std::string &task_id, const std::string &r
     is_ok = (reply && reply->type == REDIS_REPLY_INTEGER && reply->integer == 1);
     if(reply) freeReplyObject(reply);
     if(!is_ok) return false;
-    std::cout<<"setTaskResult 成功！！！！！！！！！！！"<<std::endl;
-    std::cout<<"key: "<<key<<std::endl;
-    std::cout<<"result: "<<result<<std::endl;
-    std::cout<<"expire_seconds: "<<expire_seconds<<std::endl;
+
     return is_ok;
 }
 
@@ -92,10 +92,8 @@ std::string RedisClient::getTaskResult(const std::string &task_id)
     if(!reply)return res;
     if(reply->type == REDIS_REPLY_STRING)
     {
+        
         res = reply->str;
-        // // 打印结果
-        // std::cout<<"getTaskResult 成功！！！！！！！！！！！"<<std::endl;
-        // std::cout<<"res: "<<res<<std::endl;
     }
     if(reply)freeReplyObject(reply);
     return res;

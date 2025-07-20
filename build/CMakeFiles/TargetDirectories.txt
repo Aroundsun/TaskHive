@@ -2,9 +2,5 @@
 /home/admin_xhy/TaskHive/build/CMakeFiles/scheduler.dir
 /home/admin_xhy/TaskHive/build/CMakeFiles/worker.dir
 /home/admin_xhy/TaskHive/build/CMakeFiles/client.dir
-/home/admin_xhy/TaskHive/build/CMakeFiles/test_redis.dir
-/home/admin_xhy/TaskHive/build/CMakeFiles/test_zkclient.dir
-/home/admin_xhy/TaskHive/build/CMakeFiles/test_message_queue.dir
-/home/admin_xhy/TaskHive/build/CMakeFiles/tests.dir
 /home/admin_xhy/TaskHive/build/CMakeFiles/edit_cache.dir
 /home/admin_xhy/TaskHive/build/CMakeFiles/rebuild_cache.dir

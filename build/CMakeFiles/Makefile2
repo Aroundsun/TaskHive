@@ -67,9 +67,6 @@ all: CMakeFiles/myfuncs.dir/all
 all: CMakeFiles/scheduler.dir/all
 all: CMakeFiles/worker.dir/all
 all: CMakeFiles/client.dir/all
-all: CMakeFiles/test_redis.dir/all
-all: CMakeFiles/test_zkclient.dir/all
-all: CMakeFiles/test_message_queue.dir/all
 .PHONY : all
 
 # The main recursive "preinstall" target.
@@ -81,10 +78,6 @@ clean: CMakeFiles/myfuncs.dir/clean
 clean: CMakeFiles/scheduler.dir/clean
 clean: CMakeFiles/worker.dir/clean
 clean: CMakeFiles/client.dir/clean
-clean: CMakeFiles/test_redis.dir/clean
-clean: CMakeFiles/test_zkclient.dir/clean
-clean: CMakeFiles/test_message_queue.dir/clean
-clean: CMakeFiles/tests.dir/clean
 .PHONY : clean
 
 #=============================================================================
@@ -146,7 +139,7 @@ CMakeFiles/scheduler.dir/clean:
 CMakeFiles/worker.dir/all: CMakeFiles/myfuncs.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/worker.dir/build.make CMakeFiles/worker.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/worker.dir/build.make CMakeFiles/worker.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/admin_xhy/TaskHive/build/CMakeFiles --progress-num=24,25,26,27,28,29,30 "Built target worker"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/admin_xhy/TaskHive/build/CMakeFiles --progress-num=15,16,17,18,19,20,21 "Built target worker"
 .PHONY : CMakeFiles/worker.dir/all
 
 # Build rule for subdir invocation for target.
@@ -190,112 +183,6 @@ client: CMakeFiles/client.dir/rule
 CMakeFiles/client.dir/clean:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/clean
 .PHONY : CMakeFiles/client.dir/clean
-
-#=============================================================================
-# Target rules for target CMakeFiles/test_redis.dir
-
-# All Build rule for target.
-CMakeFiles/test_redis.dir/all:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_redis.dir/build.make CMakeFiles/test_redis.dir/depend
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_redis.dir/build.make CMakeFiles/test_redis.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/admin_xhy/TaskHive/build/CMakeFiles --progress-num=18,19,20 "Built target test_redis"
-.PHONY : CMakeFiles/test_redis.dir/all
-
-# Build rule for subdir invocation for target.
-CMakeFiles/test_redis.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/admin_xhy/TaskHive/build/CMakeFiles 3
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/test_redis.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/admin_xhy/TaskHive/build/CMakeFiles 0
-.PHONY : CMakeFiles/test_redis.dir/rule
-
-# Convenience name for target.
-test_redis: CMakeFiles/test_redis.dir/rule
-.PHONY : test_redis
-
-# clean rule for target.
-CMakeFiles/test_redis.dir/clean:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_redis.dir/build.make CMakeFiles/test_redis.dir/clean
-.PHONY : CMakeFiles/test_redis.dir/clean
-
-#=============================================================================
-# Target rules for target CMakeFiles/test_zkclient.dir
-
-# All Build rule for target.
-CMakeFiles/test_zkclient.dir/all:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_zkclient.dir/build.make CMakeFiles/test_zkclient.dir/depend
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_zkclient.dir/build.make CMakeFiles/test_zkclient.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/admin_xhy/TaskHive/build/CMakeFiles --progress-num=21,22,23 "Built target test_zkclient"
-.PHONY : CMakeFiles/test_zkclient.dir/all
-
-# Build rule for subdir invocation for target.
-CMakeFiles/test_zkclient.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/admin_xhy/TaskHive/build/CMakeFiles 3
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/test_zkclient.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/admin_xhy/TaskHive/build/CMakeFiles 0
-.PHONY : CMakeFiles/test_zkclient.dir/rule
-
-# Convenience name for target.
-test_zkclient: CMakeFiles/test_zkclient.dir/rule
-.PHONY : test_zkclient
-
-# clean rule for target.
-CMakeFiles/test_zkclient.dir/clean:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_zkclient.dir/build.make CMakeFiles/test_zkclient.dir/clean
-.PHONY : CMakeFiles/test_zkclient.dir/clean
-
-#=============================================================================
-# Target rules for target CMakeFiles/test_message_queue.dir
-
-# All Build rule for target.
-CMakeFiles/test_message_queue.dir/all:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_message_queue.dir/build.make CMakeFiles/test_message_queue.dir/depend
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_message_queue.dir/build.make CMakeFiles/test_message_queue.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/admin_xhy/TaskHive/build/CMakeFiles --progress-num=15,16,17 "Built target test_message_queue"
-.PHONY : CMakeFiles/test_message_queue.dir/all
-
-# Build rule for subdir invocation for target.
-CMakeFiles/test_message_queue.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/admin_xhy/TaskHive/build/CMakeFiles 3
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/test_message_queue.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/admin_xhy/TaskHive/build/CMakeFiles 0
-.PHONY : CMakeFiles/test_message_queue.dir/rule
-
-# Convenience name for target.
-test_message_queue: CMakeFiles/test_message_queue.dir/rule
-.PHONY : test_message_queue
-
-# clean rule for target.
-CMakeFiles/test_message_queue.dir/clean:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_message_queue.dir/build.make CMakeFiles/test_message_queue.dir/clean
-.PHONY : CMakeFiles/test_message_queue.dir/clean
-
-#=============================================================================
-# Target rules for target CMakeFiles/tests.dir
-
-# All Build rule for target.
-CMakeFiles/tests.dir/all: CMakeFiles/test_redis.dir/all
-CMakeFiles/tests.dir/all: CMakeFiles/test_zkclient.dir/all
-CMakeFiles/tests.dir/all: CMakeFiles/test_message_queue.dir/all
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/tests.dir/build.make CMakeFiles/tests.dir/depend
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/tests.dir/build.make CMakeFiles/tests.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/admin_xhy/TaskHive/build/CMakeFiles --progress-num= "Built target tests"
-.PHONY : CMakeFiles/tests.dir/all
-
-# Build rule for subdir invocation for target.
-CMakeFiles/tests.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/admin_xhy/TaskHive/build/CMakeFiles 9
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/tests.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/admin_xhy/TaskHive/build/CMakeFiles 0
-.PHONY : CMakeFiles/tests.dir/rule
-
-# Convenience name for target.
-tests: CMakeFiles/tests.dir/rule
-.PHONY : tests
-
-# clean rule for target.
-CMakeFiles/tests.dir/clean:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/tests.dir/build.make CMakeFiles/tests.dir/clean
-.PHONY : CMakeFiles/tests.dir/clean
 
 #=============================================================================
 # Special targets to cleanup operation of make.
