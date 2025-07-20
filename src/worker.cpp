@@ -23,6 +23,8 @@ const std::string RABBITMQ_HOST = "127.0.0.1";
 const int RABBITMQ_PORT = 5672;
 const std::string RABBITMQ_USER = "guest";
 const std::string RABBITMQ_PASSWORD = "guest";
+const int TASK_CHANNEL_ID = 3;
+const int RESULT_CHANNEL_ID = 4;
 
 // 函数库
 const char *FUNCTION_LIB = "libmyfuncs.so";
@@ -92,13 +94,13 @@ void Worker::init()
     }
 
     // 初始化工作端任务队列
-    worker_task_queue_ = std::make_shared<MyWorkerTaskQueue>();
+    worker_task_queue_ = std::make_shared<MyWorkerTaskQueue>(TASK_CHANNEL_ID);
     if (!worker_task_queue_->connect(RABBITMQ_HOST, RABBITMQ_PORT, RABBITMQ_USER, RABBITMQ_PASSWORD)) {
         std::cerr << "连接RabbitMQ任务队列失败" << std::endl;
         return;
     }
     // 初始化工作端任务结果队列
-    worker_result_queue_ = std::make_shared<MyWorkerResultQueue>();
+    worker_result_queue_ = std::make_shared<MyWorkerResultQueue>(RESULT_CHANNEL_ID);
     if (!worker_result_queue_->connect(RABBITMQ_HOST, RABBITMQ_PORT, RABBITMQ_USER, RABBITMQ_PASSWORD)) {
         std::cerr << "连接RabbitMQ结果队列失败" << std::endl;
         return;

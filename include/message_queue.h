@@ -8,9 +8,7 @@ extern "C"
 #include <amqp_tcp_socket.h>
 }
 
-// channel_id 常量集中管理
-#define TASK_CHANNEL_ID 2
-#define RESULT_CHANNEL_ID 3
+
 
 
 // 消息队列基类
@@ -18,10 +16,7 @@ class MessageQueue
 {
 public:
 
-    explicit MessageQueue(int channel_id) : channel_id_(channel_id) {
-        if (channel_id != TASK_CHANNEL_ID && channel_id != RESULT_CHANNEL_ID ) {
-            throw std::invalid_argument("MessageQueue: 非法的 channel_id");
-        }
+    explicit MessageQueue() {
         conn_ = nullptr;
         is_connected_ = false;
     }
@@ -140,10 +135,8 @@ public:
 using TaskCallback = std::function<void(taskscheduler::Task &task)>;
 
 protected:
-    TaskQueue(int channel_id = TASK_CHANNEL_ID) : MessageQueue(channel_id) {
-        if (channel_id != TASK_CHANNEL_ID) {
-            throw std::invalid_argument("TaskQueue: 非法的 channel_id");
-        }
+    TaskQueue() : MessageQueue() {
+
         queue_name_ = "task_queue";
     }
     // 防止直接实例化
@@ -168,10 +161,7 @@ public:
 using ResultCallback = std::function<void(taskscheduler::TaskResult &result)>;
 
 protected:
-    ResultQueue(int channel_id = RESULT_CHANNEL_ID) : MessageQueue(channel_id) {
-        if (channel_id != RESULT_CHANNEL_ID) {
-            throw std::invalid_argument("ResultQueue: 非法的 channel_id");
-        }
+    ResultQueue() {
         queue_name_ = "result_queue";
     }
     // 防止直接实例化
@@ -191,7 +181,9 @@ public:
 class MyWorkerTaskQueue : public TaskQueue<MyWorkerTaskQueue>
 {
 public:
-    MyWorkerTaskQueue(int channel_id = TASK_CHANNEL_ID) : TaskQueue(channel_id) {}
+    MyWorkerTaskQueue(int channel_id){
+        channel_id_ = channel_id;
+    }
     bool publishTaskImpl(const taskscheduler::Task&) { throw std::runtime_error("Not implemented"); }
     bool consumeTaskImpl(TaskCallback task_cb){
 
@@ -299,7 +291,9 @@ public:
 class MyWorkerResultQueue : public ResultQueue<MyWorkerResultQueue>
 {
 public:
-    MyWorkerResultQueue(int channel_id = RESULT_CHANNEL_ID) : ResultQueue(channel_id) {}
+    MyWorkerResultQueue(int channel_id){
+        channel_id_ = channel_id;
+    }
     bool publishResultImpl(const taskscheduler::TaskResult &result){
             //检查连接状态
             if(!is_connected_ ||!conn_){
@@ -359,7 +353,9 @@ public:
 class MySchedulerTaskQueue : public TaskQueue<MySchedulerTaskQueue>
 {
 public:
-    MySchedulerTaskQueue(int channel_id = TASK_CHANNEL_ID) : TaskQueue(channel_id) {}
+    MySchedulerTaskQueue(int channel_id){
+        channel_id_ = channel_id;
+    }
     bool publishTaskImpl(const taskscheduler::Task &task){
         //检查连接状态
         if(!is_connected_ ||!conn_){
@@ -444,7 +440,9 @@ public:
 class MySchedulerResultQueue : public ResultQueue<MySchedulerResultQueue>
 {
 public:
-    MySchedulerResultQueue(int channel_id = RESULT_CHANNEL_ID) : ResultQueue(channel_id) {}
+    MySchedulerResultQueue(int channel_id){
+        channel_id_ = channel_id;
+    }
     bool publishResultImpl(const taskscheduler::TaskResult&) { throw std::runtime_error("Not implemented"); }
     bool consumeResultImpl(ResultCallback result_cb)
     {

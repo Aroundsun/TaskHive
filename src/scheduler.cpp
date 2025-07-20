@@ -24,6 +24,8 @@ const std::string RABBITMQ_HOST = "127.0.0.1";
 const int RABBITMQ_PORT = 5672;
 const std::string RABBITMQ_USER = "guest";
 const std::string RABBITMQ_PASSWORD = "guest";
+const int TASK_CHANNEL_ID = 1;
+const int RESULT_CHANNEL_ID = 2;
 
 //能力描述
 const std::map<std::string, std::string> DEC = {
@@ -114,13 +116,13 @@ void scheduler::init() {
         }
         
         // 初始化任务队列
-        scheduler_task_queue_ = std::make_shared<MySchedulerTaskQueue>();
+        scheduler_task_queue_ = std::make_shared<MySchedulerTaskQueue>(TASK_CHANNEL_ID);
         if (!scheduler_task_queue_->connect(RABBITMQ_HOST, RABBITMQ_PORT, RABBITMQ_USER, RABBITMQ_PASSWORD)) {
             std::cerr << "连接RabbitMQ任务队列失败" << std::endl;
         }
         //debug
         std::cout<<"============scheduler_task_queue_连接成功"<<std::endl;
-        scheduler_task_result_queue_ = std::make_shared<MySchedulerResultQueue>();
+        scheduler_task_result_queue_ = std::make_shared<MySchedulerResultQueue>(RESULT_CHANNEL_ID);
         if (!scheduler_task_result_queue_->connect(RABBITMQ_HOST, RABBITMQ_PORT, RABBITMQ_USER, RABBITMQ_PASSWORD)) {
             std::cerr << "连接RabbitMQ结果队列失败" << std::endl;
         }
