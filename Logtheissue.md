@@ -47,3 +47,20 @@ ParseFromString failed! 可能 result 不是合法 protobuf 数据。   result �
 
 ## 问题五
 问题四出现的问提虽然 已经解决，但是同时使用protobuf 和json 感觉有点混乱，所以需要调整，工作器执行结果的逻辑
+解决办法是将工作器内部的通信使用json 外边一律使用 protobuf
+
+## 问题六
+一个任务下没有问题，但当第二个任务提交的时候，消费的接口出现消费失败，重新启动有可以消费，也就是说只能消费一次，应该是rabbitMQ 消费啥的
+逻辑问题，比如conn_复用之类的，
+解决办法：
+查看rabbitMQ日志
+2025-07-21 04:06:27.338305+00:00 [error] <0.8511.0> Channel error on connection <0.8502.0> (127.0.0.1:46916 -> 127.0.0.1:5672, vhost: '/', user: 'guest'), channel 3:
+2025-07-21 04:06:27.338305+00:00 [error] <0.8511.0> operation basic.ack caused a channel exception precondition_failed: unknown delivery tag 1
+2025-07-21 04:06:27.338594+00:00 [error] <0.8498.0> Channel error on connection <0.8489.0> (127.0.0.1:46904 -> 127.0.0.1:5672, vhost: '/', user: 'guest'), channel 2:
+2025-07-21 04:06:27.338594+00:00 [error] <0.8498.0> operation basic.ack caused a channel exception precondition_failed: unknown delivery tag 1
+问题原因应该是connect 的实现在基类中message_queue中，导致了在第二次消费过程中进行了 连接资源的复用，导致了 Channel error on connection、在调用amqp_basic_consume 注册消费者的时候将 ack 设置为1 消费者收到消息后，显式调用 amqp_basic_ack()两次，重复 ack 会导致 RabbitMQ 直接关闭该 channel，所以就有个library_error: -16，错误信息为 unexpected protocol state。 这个错误信息，
+解决方法，
+1、将基类中的connect 方法定义成纯虚函数，他的必须实现在其子类中，这样直接消除这个隐患，使得完全隔离connect 函数，这个虽然没有解决这个问题但是这也是一种优化。
+1、去掉一个amqp_basic_ack()
+
+

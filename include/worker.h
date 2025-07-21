@@ -64,8 +64,8 @@ private:
     std::mutex pending_tasks_queue_size_mutex_;//待执行任务缓存队列大小互斥锁
 
     
-    std::shared_ptr<MyWorkerTaskQueue> worker_task_queue_;//工作端任务队列
-    std::shared_ptr<MyWorkerResultQueue> worker_result_queue_;//工作端任务结果队列
+    std::unique_ptr<MyWorkerTaskQueue> worker_task_queue_;//工作端任务队列
+    std::unique_ptr<MyWorkerResultQueue> worker_result_queue_;//工作端任务结果队列
 
     
     std::thread receive_task_thread_;//消费任务线程

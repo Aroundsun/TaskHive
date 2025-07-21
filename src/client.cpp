@@ -107,6 +107,7 @@ void Client::submit_task_threadfunction()
             }
             catch(const std::exception& e)
             {
+
                 std::cerr << e.what() << '\n';
             }
 
@@ -133,18 +134,16 @@ void Client::consume_task_resultfunction()
             std::string result = redis_client_->getTaskResult(taskid);
             if(result != "NO_RESULT")
             {
+                //查到结果删除
+                redis_client_->deleteTaskResult(taskid);
                 //反序列化任务结果
                 taskscheduler::TaskResult taskresult;
                 taskresult.ParseFromString(result);
-                //打印任务结果
-                //std::cout << "taskid: " << taskid << " output: " << taskresult.output() << std::endl;
-                //打印任务结果
-                //std::cout << "taskid: " << taskid << result << std::endl;
                 {
                     //添加到任务结果队列
                     std::lock_guard<std::mutex> lock_taskresult(taskresult_mutex_);
                     taskresult_[taskid] = taskresult;
-                    //打印任务结果
+
                 }
 
                 //从已提交任务id队列中移除

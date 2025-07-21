@@ -9,22 +9,22 @@
 const std::string WORKER_HOST = "127.0.0.1";
 const int WORKER_PORT = 12346;
 
-//配置信息
-//工作端ID
+// 配置信息
+// 工作端ID
 const std::string WORKER_ID = "worker-1";
-//zk 地址
+// zk 地址
 const std::string WORKER_ZK_ADDR = "127.0.0.1:2181";
 const std::string ZK_ROOT_PATH = "/TaskHive";
 const std::string ZK_PATH = ZK_ROOT_PATH + "/workers";
 const std::string ZK_NODE = "worker-1";
 
-//rabbitmq配置
+// rabbitmq配置
 const std::string RABBITMQ_HOST = "127.0.0.1";
 const int RABBITMQ_PORT = 5672;
 const std::string RABBITMQ_USER = "guest";
 const std::string RABBITMQ_PASSWORD = "guest";
-const int TASK_CHANNEL_ID = 3;
-const int RESULT_CHANNEL_ID = 4;
+const int WORKER_TASK_CHANNEL_ID  = 3;
+const int WORKER_RESULT_CHANNEL_ID = 4;
 
 // 函数库
 const char *FUNCTION_LIB = "libmyfuncs.so";
@@ -50,22 +50,22 @@ void Worker::init()
 {
     // 初始化zk客户端
     zkcli_ = std::make_shared<ZkClient>();
-    if(!zkcli_->connect(WORKER_ZK_ADDR))    
+    if (!zkcli_->connect(WORKER_ZK_ADDR))
     {
         std::cerr << "连接Zookeeper失败: " << WORKER_ZK_ADDR << std::endl;
         return;
     }
-    //检查根节点是否存在
-    if(!zkcli_->exists(ZK_PATH))
+    // 检查根节点是否存在
+    if (!zkcli_->exists(ZK_PATH))
     {
-        //创建根节点
-        if(!zkcli_->createNode(ZK_ROOT_PATH, "",ZOO_PERSISTENT))
+        // 创建根节点
+        if (!zkcli_->createNode(ZK_ROOT_PATH, "", ZOO_PERSISTENT))
         {
             std::cerr << "创建项目根节点失败" << std::endl;
             return;
         }
-        //创建节点
-        if(!zkcli_->createNode(ZK_PATH, "",ZOO_PERSISTENT))
+        // 创建节点
+        if (!zkcli_->createNode(ZK_PATH, "", ZOO_PERSISTENT))
         {
             std::cerr << "创建worker根节点失败" << std::endl;
             return;
@@ -86,22 +86,24 @@ void Worker::init()
     }
     // 将节点数据序列化
     heartbeat.SerializeToString(&heartbeat_data);
-    //创建当前工作端节点 --临时节点
-    if(!zkcli_->createNode(ZK_PATH + "/" + ZK_NODE, heartbeat_data, ZOO_EPHEMERAL))
+    // 创建当前工作端节点 --临时节点
+    if (!zkcli_->createNode(ZK_PATH + "/" + ZK_NODE, heartbeat_data, ZOO_EPHEMERAL))
     {
         std::cerr << "创建Zookeeper节点失败" << std::endl;
         return;
     }
 
     // 初始化工作端任务队列
-    worker_task_queue_ = std::make_shared<MyWorkerTaskQueue>(TASK_CHANNEL_ID);
-    if (!worker_task_queue_->connect(RABBITMQ_HOST, RABBITMQ_PORT, RABBITMQ_USER, RABBITMQ_PASSWORD)) {
+    worker_task_queue_ = std::make_unique<MyWorkerTaskQueue>(WORKER_TASK_CHANNEL_ID);
+    if (!worker_task_queue_->connect(RABBITMQ_HOST, RABBITMQ_PORT, RABBITMQ_USER, RABBITMQ_PASSWORD))
+    {
         std::cerr << "连接RabbitMQ任务队列失败" << std::endl;
         return;
     }
     // 初始化工作端任务结果队列
-    worker_result_queue_ = std::make_shared<MyWorkerResultQueue>(RESULT_CHANNEL_ID);
-    if (!worker_result_queue_->connect(RABBITMQ_HOST, RABBITMQ_PORT, RABBITMQ_USER, RABBITMQ_PASSWORD)) {
+    worker_result_queue_ = std::make_unique<MyWorkerResultQueue>(WORKER_RESULT_CHANNEL_ID);
+    if (!worker_result_queue_->connect(RABBITMQ_HOST, RABBITMQ_PORT, RABBITMQ_USER, RABBITMQ_PASSWORD))
+    {
         std::cerr << "连接RabbitMQ结果队列失败" << std::endl;
         return;
     }
@@ -157,26 +159,26 @@ void Worker::stop()
 
 void Worker::receive_task()
 {
-    //debug
-    std::cout<<"============开始接收任务"<<std::endl;
+
     // 接收任务实现
-    try {
-        worker_task_queue_->consumeTask(
-            [this](const taskscheduler::Task &task)
-            {
-                //debug
-                std::cout<<"============接收任务"<<std::endl;
-                // 将任务添加到待执行任务缓存队列
-                std::lock_guard<std::mutex> lock(pending_tasks_mutex_);
-                pending_tasks_.push(task);
-                //debug
-                std::cout<<"============pending_tasks_.size(): "<<pending_tasks_.size()<<std::endl;
-                // 通知执行任务线程
-                pending_tasks_queue_not_empty_.notify_one();
-            });
-    } catch (const std::exception& e) {
-        std::cerr << "接收任务失败: " << e.what() << std::endl;
-    }
+    
+        try
+        {
+            worker_task_queue_->consumeTask(
+                [this](const taskscheduler::Task &task)
+                {
+                    // 将任务添加到待执行任务缓存队列
+                    std::lock_guard<std::mutex> lock(pending_tasks_mutex_);
+                    pending_tasks_.push(task);
+                    // 通知执行任务线程
+                    pending_tasks_queue_not_empty_.notify_one();
+                });
+        }
+        catch (const std::exception &e)
+        {
+            std::cerr << "接收任务失败: " << e.what() << std::endl;
+        }
+
 }
 
 // 监听任务结果缓存队列
@@ -271,7 +273,7 @@ std::string exec_func(const std::string &func, const std::map<std::string, std::
         return std::string("dlsym failed: ") + dlerror();
     }
 
-    //参数转json字符串
+    // 参数转json字符串
     Json::Value root;
     for (const auto &kv : params)
     {
@@ -318,7 +320,7 @@ void Worker::exec_task()
                 params[item.first] = item.second;
             }
             // 执行任务
-            if (task_type == taskscheduler::TaskType::COMMAND   )
+            if (task_type == taskscheduler::TaskType::COMMAND)
             {
                 // 组装参数
                 std::string command = task.content();
@@ -332,7 +334,6 @@ void Worker::exec_task()
                 {
                     task_result.set_output(result);
                     task_result.set_status(taskscheduler::TaskStatus::SUCCESS);
-
                 }
                 else
                 {
@@ -344,11 +345,12 @@ void Worker::exec_task()
             {
                 // 执行函数
                 std::string result = exec_func(context, params);
-                //现在的result是json字符串，需要反序列化
+                // 现在的result是json字符串，需要反序列化
                 Json::Value root;
                 Json::CharReaderBuilder reader;
-                Json::CharReader* reader_ptr = reader.newCharReader();
-                if (!reader_ptr->parse(result.c_str(), result.c_str() + result.size(), &root, nullptr)) {
+                Json::CharReader *reader_ptr = reader.newCharReader();
+                if (!reader_ptr->parse(result.c_str(), result.c_str() + result.size(), &root, nullptr))
+                {
                     std::cerr << "JSON 解析失败: " << std::endl;
                 }
                 /*
@@ -366,8 +368,8 @@ void Worker::exec_task()
                 std::string output = root["data"].asString();
                 std::string error_message = root["message"].asString();
                 bool success = root["success"].asBool();
-                delete reader_ptr; //释放内存
-                //反序列化任务结果
+                delete reader_ptr; // 释放内存
+                // 反序列化任务结果
                 if (success)
                 {
                     task_result.set_output(output);

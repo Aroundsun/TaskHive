@@ -18,7 +18,7 @@ public:
     
     std::string getTaskResult(const std::string& task_id);
 
-    
+    bool deleteTaskResult(const std::string& task_id);
 
     // 关闭连接
     void close();

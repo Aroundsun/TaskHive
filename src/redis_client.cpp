@@ -91,12 +91,20 @@ std::string RedisClient::getTaskResult(const std::string &task_id)
     redisReply* reply = (redisReply*)redisCommand(context_,"HGET %s result",key.c_str());
     if(!reply)return res;
     if(reply->type == REDIS_REPLY_STRING)
-    {
-        
+    {        
         res = reply->str;
     }
     if(reply)freeReplyObject(reply);
     return res;
+}
+
+bool RedisClient::deleteTaskResult(const std::string& task_id)
+{
+    std::string key = task_id;
+    redisReply* reply = (redisReply*)redisCommand(context_,"HDEL %s result",key.c_str());
+    bool is_ok = (reply && (reply->type == REDIS_REPLY_INTEGER || reply->type == REDIS_REPLY_STATUS));
+    if(reply) freeReplyObject(reply);   
+    return is_ok;
 }
 
 

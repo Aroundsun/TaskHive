@@ -76,7 +76,7 @@ const char* reverse_string(const char* input) {
         
         result = create_json_response(true, "字符串反转成功", reversed);
     } catch (...) {
-        result = create_json_response(false, "字符串反转失败",);
+        result = create_json_response(false, "字符串反转失败");
     }
     
     return result.c_str();

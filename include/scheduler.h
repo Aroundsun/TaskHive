@@ -50,9 +50,9 @@ private:
     std::shared_ptr<RedisClient> rediscli_;
 
     //调度器侧任务队列
-    std::shared_ptr<MySchedulerTaskQueue> scheduler_task_queue_;
+    std::unique_ptr<MySchedulerTaskQueue> scheduler_task_queue_;
     //调度器侧任务结果队列
-    std::shared_ptr<MySchedulerResultQueue> scheduler_task_result_queue_;
+    std::unique_ptr<MySchedulerResultQueue> scheduler_task_result_queue_;
 
     //待分发的任务队列
     std::queue<taskscheduler::Task> pending_tasks_;
