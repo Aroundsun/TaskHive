@@ -51,15 +51,11 @@ bool ZkClient::createNode(const std::string& path, const std::string& data, int 
                             realpath,
                             sizeof(realpath)-1);
 
-    if(is_OK != ZOK)
-    {
-
+    if(is_OK != ZOK){
         return false;
     }
     return true;
 }
-
-
 /*
 zoo_set(zhandle_t *zh, const char *path, const char *buffer,
                    int buflen, int version);

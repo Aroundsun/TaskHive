@@ -112,11 +112,12 @@ private:
     struct SchedulerNodeInfo{
         std::string node_id;
         std::string ip;
-        std::string port;
+        int port;
         std::unordered_map<std::string,std::string> descriptor;
     };
     //缓存所有健康的调度器节点
     std::unordered_map<std::string,SchedulerNodeInfo> hearly_secheduler_node_table_;
+    std::mutex hearly_secheduler_node_table_mutex_;
 
     //提交任务线程
     std::thread submit_task_thread_;

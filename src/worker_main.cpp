@@ -1,10 +1,17 @@
 #include "worker.h"
+#include <csignal>
+#include <atomic>
+
+
 
 int main(int argc, char* argv[]) {
+    
     Worker worker;
     worker.start();
 
+
     //阻塞等待
-    std::this_thread::sleep_for(std::chrono::seconds(100));
+    getchar();
+
     return 0;
 }

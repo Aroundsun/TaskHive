@@ -62,5 +62,18 @@ ParseFromString failed! 可能 result 不是合法 protobuf 数据。   result �
 解决方法，
 1、将基类中的connect 方法定义成纯虚函数，他的必须实现在其子类中，这样直接消除这个隐患，使得完全隔离connect 函数，这个虽然没有解决这个问题但是这也是一种优化。
 1、去掉一个amqp_basic_ack()
+## 问题七
+在关闭调度器工作器、客户端的时候，开辟的线程不能正确的回收
+解决方法：
+1、先将socketfd 定义为数据成员，方便退出接收任务线程
+2、资源释放顺序问题，导致有的线程中访问里已经访问的数据，导致段错误，调整资源释放顺序
 
+## 问题八
+在完善客户端负载均衡调度器心跳信息过程中，客户端无法读取到调度器心跳信息
+terminate called after throwing an instance of 'std::runtime_error'
+  what():  no healthy scheduler node!!!!
+Aborted (core dumped)
+解决方法
+1、调度器心跳上传太慢，导致客户端第一时间读取不到心跳信息 -在调取器启动的时候先上传一个心跳
+2、
 

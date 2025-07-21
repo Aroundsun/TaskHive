@@ -133,51 +133,83 @@ void Worker::stop()
         return;
     }
     running_ = false;
+    //唤醒所有等待的线程
+    pending_tasks_queue_not_empty_.notify_all();
+    task_result_queue_not_empty_.notify_all();
+
     // 停止上报心跳线程
-    report_heartbeat_thread_.join();
+    if (report_heartbeat_thread_.joinable()){
+        report_heartbeat_thread_.join();
+        //打印日志
+        std::cout << "上报心跳线程已停止" << std::endl;
+    }
 
     // 停止接收任务线程
-    if (receive_task_thread_.joinable())
+    if (receive_task_thread_.joinable()){
         receive_task_thread_.join();
+        //打印日志
+        std::cout << "接收任务线程已停止" << std::endl;
+    }
     // 停止执行任务线程
-    if (exec_task_thread_.joinable())
+    if (exec_task_thread_.joinable()){
         exec_task_thread_.join();
+        //打印日志
+        std::cout << "执行任务线程已停止" << std::endl;
+    }
     // 停止消费任务结果线程
-    if (consume_task_result_thread_.joinable())
+    if (consume_task_result_thread_.joinable()){
         consume_task_result_thread_.join();
+        //打印日志
+        std::cout << "消费任务结果线程已停止" << std::endl;
+    }
 
     // 关闭工作端任务队列
-    if (worker_task_queue_)
+    if (worker_task_queue_){
         worker_task_queue_->close();
+        //打印日志
+        std::cout << "关闭工作端任务队列" << std::endl;
+    }
     // 关闭工作端任务结果队列
-    if (worker_result_queue_)
+    if (worker_result_queue_){
         worker_result_queue_->close();
+        //打印日志
+        std::cout << "关闭工作端任务结果队列" << std::endl;
+    }
     // 关闭zk客户端
-    if (zkcli_)
+    if (zkcli_){
         zkcli_->close();
+        //打印日志
+        std::cout << "关闭zk客户端" << std::endl;
+    }
+
 }
+
 
 void Worker::receive_task()
 {
 
     // 接收任务实现
-    
-        try
-        {
-            worker_task_queue_->consumeTask(
-                [this](const taskscheduler::Task &task)
+    try
+    {
+        worker_task_queue_->consumeTask(
+            [this](const taskscheduler::Task &task)
+            {
+                //缓存任务到本地任务队列
                 {
-                    // 将任务添加到待执行任务缓存队列
                     std::lock_guard<std::mutex> lock(pending_tasks_mutex_);
                     pending_tasks_.push(task);
-                    // 通知执行任务线程
-                    pending_tasks_queue_not_empty_.notify_one();
-                });
-        }
-        catch (const std::exception &e)
-        {
-            std::cerr << "接收任务失败: " << e.what() << std::endl;
-        }
+                }
+                // 通知执行任务线程
+                pending_tasks_queue_not_empty_.notify_one();
+                //打印日志
+                std::cout << "接收任务: " << task.task_id() << " 成功" << std::endl;
+            });
+    }
+    catch (const std::exception &e)
+    {
+        //打印日志
+        std::cerr << "接收任务失败: " << e.what() << std::endl;
+    }
 
 }
 
@@ -191,8 +223,11 @@ void Worker::report_task_result()
         if (task_result_queue_.empty() && running_)
         {
             task_result_queue_not_empty_.wait(lock, [this]()
-                                              { return !running_ || !task_result_queue_.empty(); });
+                    { 
+                        return !running_ || !task_result_queue_.empty(); 
+                    });
         }
+        //任务结果队列不为空
         if (!task_result_queue_.empty())
         {
             task_result = task_result_queue_.front();
@@ -200,6 +235,7 @@ void Worker::report_task_result()
             // 上报任务结果
             worker_result_queue_->publishResult(task_result);
         }
+        //任务结果队列为空 且 运行状态为false 退出循环
         if (!running_ && task_result_queue_.empty())
         {
             break;
@@ -326,7 +362,7 @@ void Worker::exec_task()
                 std::string command = task.content();
                 for (auto &item : params)
                 {
-                    command += " " + item.first + " " + item.second;
+                    command += " " + item.first  + item.second;
                 }
                 // 执行命令
                 std::string result = exec_cmd(command);

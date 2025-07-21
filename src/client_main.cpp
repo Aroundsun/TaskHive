@@ -14,10 +14,10 @@ int main() {
 
     taskscheduler::Task task;
     task.set_task_id("task-1");
-    task.set_type(taskscheduler::TaskType::FUNCTION);
-    task.set_content("add_numbers");
-    task.mutable_metadata()->insert({"a","9"});
-    task.mutable_metadata()->insert({"b","990"});
+    task.set_type(taskscheduler::TaskType::COMMAND);
+    task.set_content("ls");
+    task.mutable_metadata()->insert({"-","la"});
+    //task.mutable_metadata()->insert({"b","990"});
 
     std::string task_id = task.task_id();
     //提交任务
@@ -43,11 +43,15 @@ int main() {
     //提交任务
     client.submit_one_task(task1);
 
+
     //阻塞等待任务结果 等10秒
     std::this_thread::sleep_for(std::chrono::seconds(3));
         //获取任务结果
     taskscheduler::TaskResult task_result1 = client.get_task_result(task_id1);
     std::cout << "任务结果: " << task_result1.output() << std::endl;
+
+
+   
 
     return 0;
 }
