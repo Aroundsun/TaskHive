@@ -7,6 +7,7 @@ extern "C"
 #include <amqp.h>
 #include <amqp_tcp_socket.h>
 }
+#include <mutex>
 
 // 消息队列基类
 class MessageQueue
@@ -17,7 +18,13 @@ public:
         conn_ = nullptr;
         is_connected_ = false;
     }
-    virtual ~MessageQueue() {}
+    virtual ~MessageQueue() {
+        if (conn_) {
+            amqp_channel_close(conn_, channel_id_, AMQP_REPLY_SUCCESS);
+            amqp_connection_close(conn_, AMQP_REPLY_SUCCESS);
+            amqp_destroy_connection(conn_);
+        }
+    }
 
     // 纯虚函数，强制子类实现
     virtual bool connect(const std::string &mq_host, int mq_port,
@@ -25,25 +32,13 @@ public:
 
     virtual void close()
     {
-        std::cout << "[MessageQueue] close called, channel_id_: " << channel_id_ << std::endl;
         if (is_connected_ && conn_)
         {
-            // 关闭 channel
-            amqp_rpc_reply_t close_channel_ret = amqp_channel_close(conn_, channel_id_, AMQP_REPLY_SUCCESS);
-            std::cout << "[MessageQueue] amqp_channel_close reply_type: " << close_channel_ret.reply_type << std::endl;
-            // 关闭连接
-            amqp_rpc_reply_t close_conn_ret = amqp_connection_close(conn_, AMQP_REPLY_SUCCESS);
-            std::cout << "[MessageQueue] amqp_connection_close reply_type: " << close_conn_ret.reply_type << std::endl;
-            // 销毁连接
-            int destroy_ret = amqp_destroy_connection(conn_);
-            std::cout << "[MessageQueue] amqp_destroy_connection ret: " << destroy_ret << std::endl;
-            // 重置状态
-            conn_ = nullptr;
-            is_connected_ = false;
+            is_connected_ = false; // 提前设置，通知消费线程退出
         }
     }
-    int getChannelId() const { return channel_id_; }
-    amqp_connection_state_t getConnection() const { return conn_; }
+    int getChannelId()  { return channel_id_; }
+    amqp_connection_state_t getConnection()  { return conn_; }
 
 protected:
     std::string queue_name_{""};
@@ -55,6 +50,8 @@ protected:
     amqp_connection_state_t conn_;
     bool is_connected_;
     int channel_id_;
+
+    std::mutex close_mutex_;
 };
 
 // 任务队列基类
@@ -221,24 +218,25 @@ public:
         while (is_connected_)
         {
             amqp_maybe_release_buffers(conn_);
-            std::cout << "[WorkerTaskQueue] 等待任务消息... channel_id_: " << channel_id_ << std::endl;
-            // 消费消息 -阻塞等待消息
-            // debug
-            std::cout << "============等待任务消息。。。。。。。。" << std::endl;
+          
             // 定义信封
             amqp_envelope_t envelope;
-            memset(&envelope, 0, sizeof(envelope));
+            // 设置超时参数
+            struct timeval timeout;
+            timeout.tv_sec = 1;
+            timeout.tv_usec = 0;
             // 消费消息
-            amqp_rpc_reply_t ret = amqp_consume_message(conn_, &envelope, nullptr, 0);
-            std::cout << "[WorkerTaskQueue] amqp_consume_message 返回类型: " << ret.reply_type << std::endl;
-            std::cout << __FILE__ << ":" << __LINE__ << " amqp_consume_message返回类型: " << ret.reply_type << std::endl;
+            //debug
+            std::cout << "============等待任务消息。。。。。。。。" << std::endl;
+            std::cout << "============is_connected_: " << is_connected_ << std::endl;
+            amqp_rpc_reply_t ret = amqp_consume_message(conn_, &envelope, &timeout, 0);
+            if(is_connected_ == false){
+                break;
+            }
             if (ret.reply_type == AMQP_RESPONSE_NORMAL)
             {
-                std::cout << "[WorkerTaskQueue] 消息接收成功，delivery_tag: " << envelope.delivery_tag << std::endl;
-                std::cout << "WorkerTaskQueue: 消息接收成功，开始解析" << std::endl;
                 // 解析消息
                 std::string msg_body(static_cast<char *>(envelope.message.body.bytes), envelope.message.body.len);
-
                 taskscheduler::Task task;
                 if (!task.ParseFromString(msg_body))
                 {
@@ -266,18 +264,18 @@ public:
                 // 销毁envelope
                 amqp_destroy_envelope(&envelope);
             }
+            else if(ret.reply_type == AMQP_RESPONSE_LIBRARY_EXCEPTION && ret.library_error == AMQP_STATUS_TIMEOUT)
+            {
+                //超时，继续循环
+                continue;
+            }
             else
             {
-                std::cerr << "[WorkerTaskQueue] 消费任务失败, reply_type: " << ret.reply_type;
-                if (ret.reply_type == AMQP_RESPONSE_LIBRARY_EXCEPTION) {
-                    std::cerr << ", library_error: " << ret.library_error << ", 错误信息: " << amqp_error_string2(ret.library_error);
-                }
-                std::cerr << std::endl;
+                std::cerr << "[WorkerTaskQueue] 消费任务失败, reply_type: " << ret.reply_type << std::endl;
                 break;
             }
         }
-        std::cout << "[WorkerTaskQueue] 消费循环结束, channel_id_: " << channel_id_ << std::endl;
-
+       
         return true;
     }
 
@@ -568,9 +566,9 @@ public:
     MySchedulerResultQueue(int channel_id)
     {
         channel_id_ = channel_id;
-        running_ = true;
+
     }
-    void stop() { running_ = false; }
+
     bool connect(const std::string &mq_host, int mq_port,
                  const std::string &mq_user, const std::string &mq_pass)
     {
@@ -663,45 +661,47 @@ public:
             }
         }
 
-        while (running_)
+        while (is_connected_)
         {
             amqp_maybe_release_buffers(conn_);
-            // 定义信封
             amqp_envelope_t envelope;
-            // 消费消息 -阻塞等待消息
-            std::cout << "============等待结果消息。。。。。。。。" << std::endl;
-            amqp_rpc_reply_t ret = amqp_consume_message(conn_, &envelope, nullptr, 0);
-            std::cout << "============收到结果消息。。。。。。。。" << std::endl;
-            if (ret.reply_type == AMQP_RESPONSE_NORMAL)
+            // 设置超时参数
+            struct timeval timeout;
+            timeout.tv_sec = 1;
+            timeout.tv_usec = 0;
+            amqp_rpc_reply_t ret = amqp_consume_message(conn_, &envelope, &timeout, 0);
+            if(is_connected_ == false){
+                break;
+            }
+           if (ret.reply_type == AMQP_RESPONSE_NORMAL)
             {
-                // 解析消息
                 taskscheduler::TaskResult result;
                 std::string msg_body(static_cast<char *>(envelope.message.body.bytes), envelope.message.body.len);
                 if (!result.ParseFromString(msg_body))
                 {
                     throw std::runtime_error("SchedulerResultQueue: 解析消息失败");
                 }
-                // 处理消息
                 try
                 {
-                    result_cb(result); // 对消息的处理由使用者实现
+                    result_cb(result);
                 }
                 catch (const std::exception &e)
                 {
                     std::cerr << "SchedulerResultQueue: 处理消息失败" << e.what() << std::endl;
                 }
-                // 确认消息
                 if (amqp_basic_ack(conn_, channel_id_, envelope.delivery_tag, 0) != AMQP_STATUS_OK)
                 {
                     std::cerr << "SchedulerResultQueue: Ack 消息失败" << std::endl;
                 }
-                // 销毁envelope
                 amqp_destroy_envelope(&envelope);
+            }
+            else if (ret.reply_type == AMQP_RESPONSE_LIBRARY_EXCEPTION && ret.library_error == AMQP_STATUS_TIMEOUT) {
+                // 超时，继续循环，检查is_connected_
+                continue;
             }
             else
             {
-                // 进一步美化日志：只要是stop/close或连接已关闭都输出主动退出
-                if (!running_ || !is_connected_ || !conn_)
+                if (!is_connected_ || !conn_)
                 {
                     std::cout << "[SchedulerResultQueue] 消费循环主动退出, channel_id_: " << channel_id_ << std::endl;
                 }
@@ -719,6 +719,4 @@ public:
         return true;
     }
 
-private:
-    bool running_ = true;
 };

@@ -136,7 +136,14 @@ void Worker::stop()
     //唤醒所有等待的线程
     pending_tasks_queue_not_empty_.notify_all();
     task_result_queue_not_empty_.notify_all();
-
+    // 关闭工作端任务队列
+    if (worker_task_queue_){
+        worker_task_queue_->close();
+    }
+    // 关闭工作端任务结果队列
+    if (worker_result_queue_){
+        worker_result_queue_->close();
+    }
     // 停止上报心跳线程
     if (report_heartbeat_thread_.joinable()){
         report_heartbeat_thread_.join();
@@ -163,18 +170,7 @@ void Worker::stop()
         std::cout << "消费任务结果线程已停止" << std::endl;
     }
 
-    // 关闭工作端任务队列
-    if (worker_task_queue_){
-        worker_task_queue_->close();
-        //打印日志
-        std::cout << "关闭工作端任务队列" << std::endl;
-    }
-    // 关闭工作端任务结果队列
-    if (worker_result_queue_){
-        worker_result_queue_->close();
-        //打印日志
-        std::cout << "关闭工作端任务结果队列" << std::endl;
-    }
+    
     // 关闭zk客户端
     if (zkcli_){
         zkcli_->close();
@@ -184,7 +180,7 @@ void Worker::stop()
 
 }
 
-
+// 消费任务实现
 void Worker::receive_task()
 {
 
@@ -201,8 +197,6 @@ void Worker::receive_task()
                 }
                 // 通知执行任务线程
                 pending_tasks_queue_not_empty_.notify_one();
-                //打印日志
-                std::cout << "接收任务: " << task.task_id() << " 成功" << std::endl;
             });
     }
     catch (const std::exception &e)
@@ -213,7 +207,7 @@ void Worker::receive_task()
 
 }
 
-// 监听任务结果缓存队列
+// 生产任务结果实现
 void Worker::report_task_result()
 {
     taskscheduler::TaskResult task_result;
@@ -337,6 +331,11 @@ void Worker::exec_task()
             pending_tasks_queue_not_empty_.wait(lock, [this]()
                                                 { return !running_ || !pending_tasks_.empty(); });
         }
+        // 如果运行状态为false，退出循环
+        if(!running_){
+            break;
+        }
+        // 如果任务队列不为空且运行状态为true，执行任务
         if (!pending_tasks_.empty())
         {
             taskscheduler::Task task = pending_tasks_.front();
@@ -438,9 +437,8 @@ void Worker::exec_task()
             // 通知上报任务结果线程
             task_result_queue_not_empty_.notify_one();
         }
-        if (!running_ && pending_tasks_.empty())
-        {
+
             break;
-        }
+
     }
 }

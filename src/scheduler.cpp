@@ -68,20 +68,19 @@ void scheduler::start()
     // 启动获取任务结果线程
     get_task_result_thread_ = std::thread(&scheduler::get_task_result_thread_function, this);
 }
+
 // 初始化实现
 void scheduler::init()
 {
     try
     {
-
         //初始化监听套接字
         // 通过监听一个端口，接收任务
         //  创建一个socket
         listen_socket_fd_ = socket(AF_INET, SOCK_STREAM, 0);
         if (listen_socket_fd_ == -1)
         {
-            std::cerr << "创建socket失败: " << strerror(errno) << std::endl;
-            return;
+            throw std::runtime_error("创建socket失败");
         }
 
         // 设置socket选项，允许地址重用
@@ -95,25 +94,21 @@ void scheduler::init()
         addr.sin_addr.s_addr = inet_addr(RECEIVE_TASK_HOST.c_str());
         if (bind(listen_socket_fd_, (struct sockaddr *)&addr, sizeof(addr)) == -1)
         {
-            std::cerr << "绑定端口失败: " << strerror(errno) << std::endl;
             close(listen_socket_fd_);
-            return;
+            throw std::runtime_error("绑定端口失败");
         }
-
         // 监听端口
         if (listen(listen_socket_fd_, 10) == -1)
         {
-            std::cerr << "监听端口失败: " << strerror(errno) << std::endl;
             close(listen_socket_fd_);
-            return;
+            throw std::runtime_error("监听端口失败");
         }
-    
+
         // 初始化zk客户端
         zkcli_ = std::make_shared<ZkClient>();
         if (!zkcli_->connect(ZK_HOST))
         {
-            std::cerr << "连接Zookeeper失败: " << ZK_HOST << std::endl;
-            return;
+            throw std::runtime_error("连接Zookeeper失败");
         }
         // 检查项目根节点是否存在
         if (!zkcli_->exists(ZK_PATH))
@@ -121,20 +116,18 @@ void scheduler::init()
             // 创建根节点
             if (!zkcli_->createNode(ZK_ROOT_PATH, "", ZOO_PERSISTENT))
             {
-                std::cerr << "创建Zookeeper根节点失败" << std::endl;
-                return;
+                throw std::runtime_error("创建Zookeeper项目根节点失败");
             }
             //创建调度器根节点
             if (!zkcli_->createNode(ZK_PATH, "", ZOO_PERSISTENT))
             {
-                std::cerr << "创建Zookeeper节点失败" << std::endl;
-                return;
+                throw std::runtime_error("创建Zookeeper调度器根节点失败");
             }
         }
         // 初始化zk节点
         std::string heartbeat_data;
         taskscheduler::SchedulerHeartbeat heartbeat = get_healthy_scheduler_heartbeat();
-        // 将心跳数据序列化成std::string类型
+        // 心跳数据序列化成
         heartbeat.SerializeToString(&heartbeat_data);
         // 创建当前调度器节点 --临时节点
         if (!zkcli_->createNode(ZK_PATH + "/" + ZK_NODE, heartbeat_data, ZOO_EPHEMERAL))
@@ -170,10 +163,10 @@ void scheduler::init()
     }
 }
 
-void scheduler::stop()
-{
+void scheduler::stop() {
+    if (!running_) return;
     running_ = false;
-    // 先关闭RabbitMQ连接，唤醒amqp_consume_message等阻塞线程
+    // 先关闭RabbitMQ channel，唤醒amqp_consume_message等阻塞线程
     if (scheduler_task_queue_){
         scheduler_task_queue_->close();
         std::cout << "关闭任务队列" << std::endl;
@@ -184,12 +177,21 @@ void scheduler::stop()
     }
     // 唤醒所有等待的线程
     pending_tasks_queue_not_empty_.notify_all();
-    // 关闭监听套接字，唤醒accept
+    // 主动唤醒阻塞在accept的线程
     if (listen_socket_fd_ != -1) {
+        int tmpfd = socket(AF_INET, SOCK_STREAM, 0);
+        if (tmpfd != -1) {
+            struct sockaddr_in addr;
+            addr.sin_family = AF_INET;
+            addr.sin_port = htons(RECEIVE_TASK_PORT);
+            addr.sin_addr.s_addr = inet_addr(RECEIVE_TASK_HOST.c_str());
+            connect(tmpfd, (struct sockaddr*)&addr, sizeof(addr));
+            close(tmpfd);
+        }
         close(listen_socket_fd_);
         listen_socket_fd_ = -1;
     }
-    // join所有线程
+    // join所有线程，确保先关闭channel再join线程
     if (report_heartbeat_thread_.joinable()){
         report_heartbeat_thread_.join();
         std::cout << "上报心跳线程已停止" << std::endl;
@@ -206,7 +208,8 @@ void scheduler::stop()
         get_task_result_thread_.join();
         std::cout << "获取任务结果线程已停止" << std::endl;
     }
-    // 再关闭zk、redis等资源
+
+    // 关闭zk、redis等资源
     if (zkcli_){
         zkcli_->close();
         std::cout << "关闭zk客户端" << std::endl;
@@ -218,8 +221,7 @@ void scheduler::stop()
     if (!pending_tasks_.empty())
     {
         std::cout << "待处理任务数量: " << pending_tasks_.size() << std::endl;
-        // 可以将这些待执行的任务分发给一个健康的调度器节点
-        // TODO: 实现分发
+        // TODO: 实现分发: 将待执行的任务分发给一个健康的调度器节点
     }
     std::cout << "调度器已停止" << std::endl;
 }
@@ -227,95 +229,107 @@ void scheduler::stop()
 // 接收任务实现
 void scheduler::receive_task_thread_function()
 {
-    // 接受任务
-    while (running_){
-        int connfd = accept(listen_socket_fd_, NULL, NULL);
-        if (connfd == -1){
-            if (running_){
-                std::cerr << "接受连接失败: " << strerror(errno) << std::endl;
+    try {
+        while (running_){
+            //debug
+            std::cout<< "receive_task_thread_function 阻塞在accept" << running_ << std::endl;
+            int connfd = accept(listen_socket_fd_, NULL, NULL);
+            //debug
+            std::cout<< "receive_task_thread_function 被唤醒在accept" << running_ << std::endl;
+            if (connfd == -1){
+                if (running_){
+                    std::cerr << "接受连接失败: " << strerror(errno) << std::endl;
+                    continue;
+                }
+                break;//退出循环
+            }
+            char buffer[4096];
+            ssize_t len = read(connfd, buffer, sizeof(buffer));
+            if (len == -1){
+                std::cerr << "读取数据失败: " << strerror(errno) << std::endl;
+                close(connfd);
                 continue;
             }
-            break;//退出循环
+            if (len == 0){
+                close(connfd);
+                continue;
+            }
+            taskscheduler::Task task;
+            if (!task.ParseFromArray(buffer, len))
+            {
+                std::cerr << "解析任务失败" << std::endl;
+                close(connfd);
+                continue;
+            }
+            {
+                std::lock_guard<std::mutex> lock(pending_tasks_mutex_);
+                pending_tasks_.push(task);
+            }
+            pending_tasks_queue_not_empty_.notify_one();
         }
-
-        // 读取任务
-        char buffer[4096];
-        ssize_t len = read(connfd, buffer, sizeof(buffer));
-        if (len == -1){
-            std::cerr << "读取数据失败: " << strerror(errno) << std::endl;
-            close(connfd);
-            continue;
-        }
-        if (len == 0){
-            close(connfd);
-            continue;
-        }
-
-        // 解析任务
-        taskscheduler::Task task;
-        if (!task.ParseFromArray(buffer, len))
-        {
-            std::cerr << "解析任务失败" << std::endl;
-            close(connfd);
-            continue;
-        }
-        //解析任务成功
-        //将任务添加到待分发的任务队列
-        {
-            std::lock_guard<std::mutex> lock(pending_tasks_mutex_);
-            pending_tasks_.push(task);
-        }
-        // 通知待提交的任务队列有任务
-        pending_tasks_queue_not_empty_.notify_one();
+    } catch (const std::exception& e) {
+        std::cerr << "接收任务线程异常: " << e.what() << std::endl;
     }
 }
 // 提交任务实现
 void scheduler::submit_task_thread_function()
 {
-    // 从待提交的任务队列中获取任务
-    taskscheduler::Task task;
-    while (running_)
-    {
-        std::unique_lock<std::mutex> lock(pending_tasks_mutex_);
-        if (pending_tasks_.empty() && running_)
-        {
-            // 等待待提交的任务队列有任务
-            pending_tasks_queue_not_empty_.wait(lock, [this]()
-                                                { return !running_ || !pending_tasks_.empty(); });
-        }
-        if (!pending_tasks_.empty())
-        {
-            // 获取任务
+    try {
+        taskscheduler::Task task;
+        //debug
+        std::cout << "submit_task_thread_function 开始提交任务" << running_ << std::endl;
 
-            task = pending_tasks_.front();
-            pending_tasks_.pop();
-            // 提交任务到rabbitmq
-            // debug
-            std::cout << "============提交任务到rabbitmq" << std::endl;
-            scheduler_task_queue_->publishTask(task);
-        }
-        if (!running_ && pending_tasks_.empty())
+        while (running_)
         {
-            break;
+            //debug
+            std::cout<< "submit_task_thread_function 等待锁" << running_ << std::endl;
+
+            std::unique_lock<std::mutex> lock(pending_tasks_mutex_);
+            //debug
+            std::cout<< "submit_task_thread_function 获取到锁" << running_ << std::endl;
+
+            if (pending_tasks_.empty() && running_)
+            {
+                //debug
+                //这个线程被阻塞在这里
+                std::cout << "submit_task_thread_function 接收任务线程被阻塞在这里" << std::endl;
+                pending_tasks_queue_not_empty_.wait(lock, [this]() { return !running_ || !pending_tasks_.empty(); });
+                //debug
+                std::cout << "submit_task_thread_function 接收任务线程被唤醒" << std::endl;
+            }
+            if (!pending_tasks_.empty())
+            {
+                //debug
+                std::cout << "submit_task_thread_function 提交任务" << std::endl;
+                task = pending_tasks_.front();
+                pending_tasks_.pop();
+                scheduler_task_queue_->publishTask(task);
+            }
+            if (!running_ && pending_tasks_.empty())
+            {
+                //debug
+                std::cout << "submit_task_thread_function 退出循环" << std::endl;
+                break;
+            }
         }
+    } catch (const std::exception& e) {
+        std::cerr << "提交任务线程异常: " << e.what() << std::endl;
     }
-    
+
 }
 // 获取任务结果实现
 void scheduler::get_task_result_thread_function()
 {
-    // 消费rabbitmq中的任务结果
     try
     {
         scheduler_task_result_queue_->consumeResult([this](taskscheduler::TaskResult &result){
             std::cout << "[Scheduler] 收到结果: " << result.task_id() << std::endl;
-            //将任务结果保存到redis
             rediscli_->setTaskResult(result.task_id(), result, 3600);
         });
     }
     catch (const std::exception &e)
     {
-        std::cerr << "获取任务结果失败: " << e.what() << std::endl;
+        std::cerr << "获取任务结果线程异常: " << e.what() << std::endl;
     }
 }
 // 上报心跳实现

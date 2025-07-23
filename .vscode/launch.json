@@ -25,7 +25,12 @@
                     "description": "将反汇编风格设置为 Intel",
                     "text": "-gdb-set disassembly-flavor intel",
                     "ignoreFailures": true
+                },
+                {
+                    "description": "让SIGINT传递给被调试程序",
+                    "text": "handle SIGINT nostop noprint pass"
                 }
+            
             ]
         }
 

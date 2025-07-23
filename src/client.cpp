@@ -46,13 +46,13 @@ void Client::start()
     if(running_)
         return;
     running_ = true;
-
+    //启动更新健康调度器表的线程
+    updata_secheduler_node_table_thread_ = std::thread(&Client::updata_secheduler_node_table_threadfunction, this);
     //启动提交任务线程
     submit_task_thread_ = std::thread(&Client::submit_task_threadfunction, this);
     //启动拉取任务结果线程
     get_task_result_thread_ = std::thread(&Client::consume_task_resultfunction, this);
-    //启动更新健康调度器表的线程
-    updata_secheduler_node_table_thread_ = std::thread(&Client::updata_secheduler_node_table_threadfunction, this);
+    
 
 }
 
@@ -193,6 +193,8 @@ void Client::updata_secheduler_node_table_threadfunction()
     {
         //获取所有调度器节点
         std::vector<std::string> scheduler_node_list = zk_client_->getAllNode(ZK_PATH);
+        //debug
+        std::cout<<"scheduler_node_list: "<<scheduler_node_list.size()<<std::endl;
         //如果调度器节点列表为空，则等待1000ms 再进行下一次更新
         if(scheduler_node_list.empty())
         {
