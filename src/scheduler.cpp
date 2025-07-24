@@ -262,6 +262,7 @@ void scheduler::receive_task_thread_function()
                 continue;
             }
             {
+                //接收到一个任务，存入待执行队列
                 std::lock_guard<std::mutex> lock(pending_tasks_mutex_);
                 pending_tasks_.push(task);
             }
@@ -281,13 +282,8 @@ void scheduler::submit_task_thread_function()
 
         while (running_)
         {
-            //debug
-            std::cout<< "submit_task_thread_function 等待锁" << running_ << std::endl;
 
             std::unique_lock<std::mutex> lock(pending_tasks_mutex_);
-            //debug
-            std::cout<< "submit_task_thread_function 获取到锁" << running_ << std::endl;
-
             if (pending_tasks_.empty() && running_)
             {
                 //debug
@@ -304,6 +300,8 @@ void scheduler::submit_task_thread_function()
                 task = pending_tasks_.front();
                 pending_tasks_.pop();
                 scheduler_task_queue_->publishTask(task);
+                //debug
+                std::cout<<"提交的任务id 是 "<<task.task_id()<<std::endl;
             }
             if (!running_ && pending_tasks_.empty())
             {

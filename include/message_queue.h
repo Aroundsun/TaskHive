@@ -20,6 +20,7 @@ public:
     }
     virtual ~MessageQueue() {
         if (conn_) {
+            //释放mq 连接的所有资源
             amqp_channel_close(conn_, channel_id_, AMQP_REPLY_SUCCESS);
             amqp_connection_close(conn_, AMQP_REPLY_SUCCESS);
             amqp_destroy_connection(conn_);
@@ -32,13 +33,12 @@ public:
 
     virtual void close()
     {
-        if (is_connected_ && conn_)
+        //设置关闭标志
+        if (is_connected_ && conn_) 
         {
-            is_connected_ = false; // 提前设置，通知消费线程退出
+            is_connected_ = false; 
         }
     }
-    int getChannelId()  { return channel_id_; }
-    amqp_connection_state_t getConnection()  { return conn_; }
 
 protected:
     std::string queue_name_{""};
@@ -65,7 +65,6 @@ public:
 protected:
     TaskQueue() : MessageQueue()
     {
-
         queue_name_ = "task_queue";
     }
 
@@ -187,15 +186,13 @@ public:
         std::cout << "[MyWorkerTaskQueue] connect success, channel_id_: " << channel_id_ << std::endl;
         return true;
     }
-
+    //工作器禁止使用的
     bool publishTaskImpl(const taskscheduler::Task &) { throw std::runtime_error("Not implemented"); }
     bool consumeTaskImpl(TaskCallback task_cb)
     {
-        std::cout << "[WorkerTaskQueue] consumeTaskImpl called, channel_id_: " << channel_id_ << std::endl;
         if (!is_connected_ || !conn_)
         {
-            std::cerr << "[WorkerTaskQueue] 未连接到RabbitMQ" << std::endl;
-            throw std::runtime_error("consumeTaskImpl 未连接到RabbitMQ");
+            throw std::runtime_error("工作器 consumeTaskImpl 未连接到RabbitMQ");
         }
         // 注册任务消费
         amqp_basic_consume_ok_t *consume_reply = amqp_basic_consume(conn_,
@@ -218,7 +215,6 @@ public:
         while (is_connected_)
         {
             amqp_maybe_release_buffers(conn_);
-          
             // 定义信封
             amqp_envelope_t envelope;
             // 设置超时参数
@@ -228,7 +224,6 @@ public:
             // 消费消息
             //debug
             std::cout << "============等待任务消息。。。。。。。。" << std::endl;
-            std::cout << "============is_connected_: " << is_connected_ << std::endl;
             amqp_rpc_reply_t ret = amqp_consume_message(conn_, &envelope, &timeout, 0);
             if(is_connected_ == false){
                 break;
@@ -240,7 +235,6 @@ public:
                 taskscheduler::Task task;
                 if (!task.ParseFromString(msg_body))
                 {
-                    std::cerr << "[WorkerTaskQueue] 解析消息失败" << std::endl;
                     throw std::runtime_error("WorkerTaskQueue: 解析消息失败");
                 }
                 // 处理消息
@@ -266,7 +260,7 @@ public:
             }
             else if(ret.reply_type == AMQP_RESPONSE_LIBRARY_EXCEPTION && ret.library_error == AMQP_STATUS_TIMEOUT)
             {
-                //超时，继续循环
+                //普通超时，继续循环
                 continue;
             }
             else

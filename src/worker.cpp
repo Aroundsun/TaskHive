@@ -23,7 +23,7 @@ const std::string RABBITMQ_HOST = "127.0.0.1";
 const int RABBITMQ_PORT = 5672;
 const std::string RABBITMQ_USER = "guest";
 const std::string RABBITMQ_PASSWORD = "guest";
-const int WORKER_TASK_CHANNEL_ID  = 3;
+const int WORKER_TASK_CHANNEL_ID = 3;
 const int WORKER_RESULT_CHANNEL_ID = 4;
 
 // 函数库
@@ -133,51 +133,56 @@ void Worker::stop()
         return;
     }
     running_ = false;
-    //唤醒所有等待的线程
+    // 唤醒所有等待的线程
     pending_tasks_queue_not_empty_.notify_all();
     task_result_queue_not_empty_.notify_all();
     // 关闭工作端任务队列
-    if (worker_task_queue_){
+    if (worker_task_queue_)
+    {
         worker_task_queue_->close();
     }
     // 关闭工作端任务结果队列
-    if (worker_result_queue_){
+    if (worker_result_queue_)
+    {
         worker_result_queue_->close();
     }
     // 停止上报心跳线程
-    if (report_heartbeat_thread_.joinable()){
+    if (report_heartbeat_thread_.joinable())
+    {
         report_heartbeat_thread_.join();
-        //打印日志
+        // 打印日志
         std::cout << "上报心跳线程已停止" << std::endl;
     }
 
     // 停止接收任务线程
-    if (receive_task_thread_.joinable()){
+    if (receive_task_thread_.joinable())
+    {
         receive_task_thread_.join();
-        //打印日志
+        // 打印日志
         std::cout << "接收任务线程已停止" << std::endl;
     }
     // 停止执行任务线程
-    if (exec_task_thread_.joinable()){
+    if (exec_task_thread_.joinable())
+    {
         exec_task_thread_.join();
-        //打印日志
+        // 打印日志
         std::cout << "执行任务线程已停止" << std::endl;
     }
     // 停止消费任务结果线程
-    if (consume_task_result_thread_.joinable()){
+    if (consume_task_result_thread_.joinable())
+    {
         consume_task_result_thread_.join();
-        //打印日志
+        // 打印日志
         std::cout << "消费任务结果线程已停止" << std::endl;
     }
 
-    
     // 关闭zk客户端
-    if (zkcli_){
+    if (zkcli_)
+    {
         zkcli_->close();
-        //打印日志
+        // 打印日志
         std::cout << "关闭zk客户端" << std::endl;
     }
-
 }
 
 // 消费任务实现
@@ -190,10 +195,12 @@ void Worker::receive_task()
         worker_task_queue_->consumeTask(
             [this](const taskscheduler::Task &task)
             {
-                //缓存任务到本地任务队列
+                // 缓存任务到本地任务队列
                 {
                     std::lock_guard<std::mutex> lock(pending_tasks_mutex_);
                     pending_tasks_.push(task);
+                    // debug
+                    std::cout << " 接收的任务的id:" << task.task_id() << std::endl;
                 }
                 // 通知执行任务线程
                 pending_tasks_queue_not_empty_.notify_one();
@@ -201,10 +208,9 @@ void Worker::receive_task()
     }
     catch (const std::exception &e)
     {
-        //打印日志
+        // 打印日志
         std::cerr << "接收任务失败: " << e.what() << std::endl;
     }
-
 }
 
 // 生产任务结果实现
@@ -217,19 +223,19 @@ void Worker::report_task_result()
         if (task_result_queue_.empty() && running_)
         {
             task_result_queue_not_empty_.wait(lock, [this]()
-                    { 
-                        return !running_ || !task_result_queue_.empty(); 
-                    });
+                                              { return !running_ || !task_result_queue_.empty(); });
         }
-        //任务结果队列不为空
+        // 任务结果队列不为空
         if (!task_result_queue_.empty())
         {
             task_result = task_result_queue_.front();
             task_result_queue_.pop();
             // 上报任务结果
             worker_result_queue_->publishResult(task_result);
+            // debug
+            std::cout << " 上传的任务结果的id:" << task_result.task_id() << std::endl;
         }
-        //任务结果队列为空 且 运行状态为false 退出循环
+        // 任务结果队列为空 且 运行状态为false 退出循环
         if (!running_ && task_result_queue_.empty())
         {
             break;
@@ -325,20 +331,33 @@ void Worker::exec_task()
     taskscheduler::TaskResult task_result;
     while (running_)
     {
+        // debug
+        // debug
+        std::cout << "执行线程等待锁" << std::endl;
         std::unique_lock<std::mutex> lock(pending_tasks_mutex_);
+        std::cout << "执行线程获取到锁" << std::endl;
+
         if (pending_tasks_.empty() && running_)
         {
+            // debug
+            // debug
+            std::cout << "执行线程被阻塞" << std::endl;
             pending_tasks_queue_not_empty_.wait(lock, [this]()
                                                 { return !running_ || !pending_tasks_.empty(); });
+            ////debug
+            std::cout << "执行任务线程被唤醒了" << std::endl;
         }
         // 如果运行状态为false，退出循环
-        if(!running_){
+        if (!running_)
+        {
             break;
         }
         // 如果任务队列不为空且运行状态为true，执行任务
         if (!pending_tasks_.empty())
         {
             taskscheduler::Task task = pending_tasks_.front();
+            // debug
+            std::cout << " 一个待任务的id:" << task.task_id() << std::endl;
             pending_tasks_.pop();
             // 解析任务
             // 任务类型
@@ -357,11 +376,13 @@ void Worker::exec_task()
             // 执行任务
             if (task_type == taskscheduler::TaskType::COMMAND)
             {
+                // debug
+                std::cout << " 命令的任务的id:" << task.task_id() << std::endl;
                 // 组装参数
                 std::string command = task.content();
                 for (auto &item : params)
                 {
-                    command += " " + item.first  + item.second;
+                    command += " " + item.first + item.second;
                 }
                 // 执行命令
                 std::string result = exec_cmd(command);
@@ -378,6 +399,8 @@ void Worker::exec_task()
             }
             else if (task_type == taskscheduler::TaskType::FUNCTION)
             {
+                std::cout << " 函数的任务的id:" << task.task_id() << std::endl;
+
                 // 执行函数
                 std::string result = exec_func(context, params);
                 // 现在的result是json字符串，需要反序列化
@@ -388,18 +411,6 @@ void Worker::exec_task()
                 {
                     std::cerr << "JSON 解析失败: " << std::endl;
                 }
-                /*
-                一条json字符串的格式
-                {
-                    "success": true,
-                    "message": "字符串反转成功",
-                    "data": "olleh"
-                }
-                {
-                    "success": false,
-                    "message": "字符串反转失败",
-                }
-                */
                 std::string output = root["data"].asString();
                 std::string error_message = root["message"].asString();
                 bool success = root["success"].asBool();
@@ -437,8 +448,5 @@ void Worker::exec_task()
             // 通知上报任务结果线程
             task_result_queue_not_empty_.notify_one();
         }
-
-            break;
-
     }
 }

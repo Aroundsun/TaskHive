@@ -124,11 +124,9 @@ void Client::submit_task_threadfunction()
             auto task = submit_undistribution_task_.front();
             submit_undistribution_task_.pop();
             //获取一个调度节点ip-port
-            std::pair<std::string,int> hearly_scheduer_host = get_hearly_secheduler_node();
+            try{
+                std::pair<std::string,int> hearly_scheduer_host = get_hearly_secheduler_node();
 
-            //提交任务到调度器
-            try
-            {
                 socket_submit_task_to_scheduler(task,hearly_scheduer_host);
             }
             catch(const std::exception& e)
@@ -248,8 +246,8 @@ std::pair<std::string,int> Client::get_hearly_secheduler_node()
     std::lock_guard<std::mutex> lock_hearly_secheduler_node_table(hearly_secheduler_node_table_mutex_);
     if(hearly_secheduler_node_table_.empty())
     {
-        
-        throw std::runtime_error("no healthy scheduler node!!!!");
+        return {"127.0.0.1",12345};
+        //throw std::runtime_error("no healthy scheduler node!!!!");
     }
     //返回一个健康调度器节点 -- 返回ip和port
     //取出这个节点
