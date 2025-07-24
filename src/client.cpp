@@ -8,7 +8,7 @@
 
 //zk配置
 const std::string ZK_HOST = "127.0.0.1:2181";
-const std::string ZK_PATH = "TaskHive/schedulers";
+const std::string ZK_PATH = "/TaskHive/schedulers";
 //redis配置
 const std::string REDIS_HOST = "127.0.0.1";
 const int REDIS_PORT = 6379;
@@ -189,7 +189,7 @@ void Client::updata_secheduler_node_table_threadfunction()
 {
     while(running_)
     {
-        //获取所有调度器节点
+        //获取所有调度器节点路径
         std::vector<std::string> scheduler_node_list = zk_client_->getAllNode(ZK_PATH);
         //debug
         std::cout<<"scheduler_node_list: "<<scheduler_node_list.size()<<std::endl;
@@ -198,27 +198,29 @@ void Client::updata_secheduler_node_table_threadfunction()
         {
             //打印日志
             std::cout<<"scheduler_node_list is empty,wait 1000ms"<<std::endl;
-            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+            std::this_thread::sleep_for(std::chrono::seconds(10));
             continue;
         }
         //遍历所有调度器节点
+        //先清空原本的di
         for(auto& scheduler_node : scheduler_node_list)
         {
             //获取调度器节点信息
-            std::string scheduler_info= zk_client_->getNodeData(ZK_PATH + "/" + scheduler_node);
+            std::string scheduler_info= zk_client_->getNodeData(scheduler_node);
             taskscheduler::SchedulerHeartbeat scheduler_heartbeat;
             //反序列化调度器节点信息
             scheduler_heartbeat.ParseFromString(scheduler_info);
             if(scheduler_heartbeat.is_healthy())
             {
-                //筛选出需要的信息
+                //筛选出需要调度器的信息
                 SchedulerNodeInfo scheduler_node_info;
                 scheduler_node_info.node_id = scheduler_heartbeat.scheduler_id();
                 scheduler_node_info.ip = scheduler_heartbeat.scheduler_ip();
                 scheduler_node_info.port = scheduler_heartbeat.scheduler_port();
                 //将能力描述添加到调度器节点信息
                 for(auto& item : scheduler_heartbeat.dec())
-                {
+                {       
+                    //debug
                     scheduler_node_info.descriptor[item.first] = item.second;
                 }
                 //更新健康调度器表
@@ -246,8 +248,7 @@ std::pair<std::string,int> Client::get_hearly_secheduler_node()
     std::lock_guard<std::mutex> lock_hearly_secheduler_node_table(hearly_secheduler_node_table_mutex_);
     if(hearly_secheduler_node_table_.empty())
     {
-        return {"127.0.0.1",12345};
-        //throw std::runtime_error("no healthy scheduler node!!!!");
+        throw std::runtime_error("no healthy scheduler node!!!!");
     }
     //返回一个健康调度器节点 -- 返回ip和port
     //取出这个节点
