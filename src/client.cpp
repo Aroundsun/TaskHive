@@ -52,11 +52,15 @@ void Client::start()
     submit_task_thread_ = std::thread(&Client::submit_task_threadfunction, this);
     //启动拉取任务结果线程
     get_task_result_thread_ = std::thread(&Client::consume_task_resultfunction, this);
-    
 
+    std::cout<<"客户端启动中......"<<'\n';
+    std::this_thread::sleep_for(std::chrono::seconds(5));
+    std::cout<<"客户端启动完成......"<<'\n';
 }
 
-//停止运行
+/*
+    停止运行
+*/
 void Client::stop()
 {       
     if(!running_)
@@ -106,7 +110,6 @@ void Client::stop()
 //提交任务线程函数
 void Client::submit_task_threadfunction()
 {
-
     while(running_)
     {
         std::unique_lock<std::mutex> lock_submit_task(submit_task_mutex_);
@@ -126,14 +129,18 @@ void Client::submit_task_threadfunction()
             //获取一个调度节点ip-port
             try{
                 std::pair<std::string,int> hearly_scheduer_host = get_hearly_secheduler_node();
-
+                while(hearly_scheduer_host.first == "")
+                {
+                    //持续的获取
+                    hearly_scheduer_host = get_hearly_secheduler_node();
+                }
+                
                 socket_submit_task_to_scheduler(task,hearly_scheduer_host);
             }
             catch(const std::exception& e)
             {
                 std::cerr << e.what() << '\n';//打印异常信息
             }
-
             //添加到已经提交任务队列
             {
                 std::lock_guard<std::mutex> lock_distribution_taskid(distribution_taskid_mutex_);
@@ -143,7 +150,9 @@ void Client::submit_task_threadfunction()
         }
     }
 }
-//拉取任务结果线程函数
+/*
+    拉取任务结果线程函数
+*/
 void Client::consume_task_resultfunction()
 {
     //遍历已经提交的任务队列，向redis 查询任务结果
@@ -189,56 +198,62 @@ void Client::updata_secheduler_node_table_threadfunction()
 {
     while(running_)
     {
-        //获取所有调度器节点路径
-        std::vector<std::string> scheduler_node_list = zk_client_->getAllNode(ZK_PATH);
-        //debug
-        std::cout<<"scheduler_node_list: "<<scheduler_node_list.size()<<std::endl;
-        //如果调度器节点列表为空，则等待1000ms 再进行下一次更新
-        if(scheduler_node_list.empty())
+        //遍历zk上的所有的调取器节点路径
+        std::cout<<"准备获取zk 节点路径"<<std::endl;
+        for(auto& scheduler_node_path : zk_client_->getAllNode(ZK_PATH))
         {
-            //打印日志
-            std::cout<<"scheduler_node_list is empty,wait 1000ms"<<std::endl;
-            std::this_thread::sleep_for(std::chrono::seconds(10));
-            continue;
-        }
-        //遍历所有调度器节点
-        //先清空原本的di
-        for(auto& scheduler_node : scheduler_node_list)
-        {
-            //获取调度器节点信息
-            std::string scheduler_info= zk_client_->getNodeData(scheduler_node);
+            //debug
+
+            std::cout<<scheduler_node_path<<std::endl;
+            //获取当前调度器节点的信息
             taskscheduler::SchedulerHeartbeat scheduler_heartbeat;
-            //反序列化调度器节点信息
+
+            std::string scheduler_info= zk_client_->getNodeData(ZK_PATH + '/' + scheduler_node_path);
             scheduler_heartbeat.ParseFromString(scheduler_info);
-            if(scheduler_heartbeat.is_healthy())
+
+            std::string scheduler_id = scheduler_heartbeat.scheduler_id();
+
+            //筛选出客户端想知道的调度器信息
+            SchedulerNodeInfo scheduler_host;
+            scheduler_host.ip = scheduler_heartbeat.scheduler_ip();
+            scheduler_host.port = scheduler_heartbeat.scheduler_port();
+            scheduler_host.undata_flag = true;
+
+            //将能力描述添加到调度器节点信息
+            for(auto& item : scheduler_heartbeat.dec())
+            {       
+                scheduler_host.descriptor[item.first] = item.second;
+            }    
+            //将当前的调度器节点信息缓存到本地
+            {    
+                std::lock_guard<std::mutex> lock_hearly_secheduler_node_table(hearly_secheduler_node_table_mutex_);
+                hearly_secheduler_node_table_[scheduler_id] = scheduler_host;
+            }
+        }
+        if(!running_)
+        {
+            break;
+        }
+        //等待1000ms 再进行下一次更新
+        std::this_thread::sleep_for(std::chrono::seconds(10));
+        { //每一次更新前调取表前，删除无效调取器及节点，重置所有有效调度器更新标识
+            std::lock_guard<std::mutex> lock_hearly_secheduler_node_table(hearly_secheduler_node_table_mutex_);
+            //遍历本地缓存的调度节点表 设置更新标识 为false
+            //移除没有更新的调度器节点- 已经不存在
+            for(auto it = hearly_secheduler_node_table_.begin();it != hearly_secheduler_node_table_.end();)
             {
-                //筛选出需要调度器的信息
-                SchedulerNodeInfo scheduler_node_info;
-                scheduler_node_info.node_id = scheduler_heartbeat.scheduler_id();
-                scheduler_node_info.ip = scheduler_heartbeat.scheduler_ip();
-                scheduler_node_info.port = scheduler_heartbeat.scheduler_port();
-                //将能力描述添加到调度器节点信息
-                for(auto& item : scheduler_heartbeat.dec())
-                {       
-                    //debug
-                    scheduler_node_info.descriptor[item.first] = item.second;
+                if(it->second.undata_flag == false){
+                    it = hearly_secheduler_node_table_.erase(it); //返回下一个有效迭代器
                 }
-                //更新健康调度器表
-                {
-                    //修改健康调度器表 上锁
-                    std::lock_guard<std::mutex> lock_hearly_secheduler_node_table(hearly_secheduler_node_table_mutex_);
-                    hearly_secheduler_node_table_[scheduler_node_info.node_id] = scheduler_node_info;
-                    //打印日志
-                    std::cout<<"update healthy scheduler node table,node_id: "<<scheduler_node_info.node_id<<",ip: "<<scheduler_node_info.ip<<",port: "<<scheduler_node_info.port<<std::endl;
+                else{  //当前的调取器信息更新过（有效的），重置更新标识
+                    it->second.undata_flag = false;
+                    ++it;
                 }
             }
         }
 
-        if(!running_)
-            break;        
-        //等待1000ms 再进行下一次更新
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-    }
+    } 
+
 }
 
 //从健康调度器表取出一个健康的调度器节点 -----后续负载均衡的引入位置
