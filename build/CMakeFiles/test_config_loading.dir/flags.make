@@ -4,7 +4,7 @@
 # compile CXX with /usr/bin/c++
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I/usr/include/jsoncpp -I/home/admin_xhy/TaskHive/include -I/home/admin_xhy/TaskHive/proto
+CXX_INCLUDES = -I/home/admin_xhy/TaskHive/include -I/usr/include/jsoncpp
 
 CXX_FLAGS = -g -std=gnu++17 -Wall -Wextra -Wno-unused-parameter
 

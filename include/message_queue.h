@@ -219,7 +219,7 @@ public:
             amqp_envelope_t envelope;
             // 设置超时参数
             struct timeval timeout;
-            timeout.tv_sec = 1;
+            timeout.tv_sec = 10;
             timeout.tv_usec = 0;
             // 消费消息
             //debug

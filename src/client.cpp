@@ -162,28 +162,38 @@ void Client::consume_task_resultfunction()
     while(running_)
     {
         //遍历已提交任务id
+        std::cout << "[Client] 当前待查询任务数量: " << distribution_taskid_.size() << std::endl;
         for(auto& taskid : distribution_taskid_)
         {
+            std::cout << "[Client] 查询任务结果: " << taskid << std::endl;
             //从redis 查询任务结果
             std::string result = redis_client_->getTaskResult(taskid);
             if(result != "NO_RESULT")
             {
+                std::cout << "[Client] 找到任务结果: " << taskid << std::endl;
                 //查到结果删除
                 redis_client_->deleteTaskResult(taskid);
                 //反序列化任务结果
                 taskscheduler::TaskResult taskresult;
-                taskresult.ParseFromString(result);
-                {
-                    //添加到任务结果队列
-                    std::lock_guard<std::mutex> lock_taskresult(taskresult_mutex_);
-                    taskresult_[taskid] = taskresult;
+                if(taskresult.ParseFromString(result)) {
+                    std::cout << "[Client] 任务结果反序列化成功: " << taskid << ", 状态: " << taskresult.status() << std::endl;
+                    {
+                        //添加到任务结果队列
+                        std::lock_guard<std::mutex> lock_taskresult(taskresult_mutex_);
+                        taskresult_[taskid] = taskresult;
+                    }
 
+                    //从已提交任务id队列中移除
+                    distribution_taskid_.erase(std::remove(distribution_taskid_.begin(),distribution_taskid_.end(),taskid),distribution_taskid_.end());
+                    //通知获取结果线程有任务结果
+                    submit_task_queue_no_empty_.notify_one();
+                } else {
+                    std::cerr << "[Client] 任务结果反序列化失败: " << taskid << std::endl;
                 }
-
-                //从已提交任务id队列中移除
-                distribution_taskid_.erase(std::remove(distribution_taskid_.begin(),distribution_taskid_.end(),taskid),distribution_taskid_.end());
-                //通知获取结果线程有任务结果
-                submit_task_queue_no_empty_.notify_one();
+            }
+            else
+            {
+                std::cout << "[Client] 未找到任务结果: " << taskid << std::endl;
             }
         }
         //等待1000ms 避免频繁查询redis

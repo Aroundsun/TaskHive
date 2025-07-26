@@ -73,71 +73,71 @@ CMakeFiles/scheduler.dir/src/scheduler_main.cpp.o: CMakeFiles/scheduler.dir/flag
 CMakeFiles/scheduler.dir/src/scheduler_main.cpp.o: /home/admin_xhy/TaskHive/src/scheduler_main.cpp
 CMakeFiles/scheduler.dir/src/scheduler_main.cpp.o: CMakeFiles/scheduler.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/admin_xhy/TaskHive/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/scheduler.dir/src/scheduler_main.cpp.o"
-	/usr/bin/aarch64-linux-gnu-g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/scheduler.dir/src/scheduler_main.cpp.o -MF CMakeFiles/scheduler.dir/src/scheduler_main.cpp.o.d -o CMakeFiles/scheduler.dir/src/scheduler_main.cpp.o -c /home/admin_xhy/TaskHive/src/scheduler_main.cpp
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/scheduler.dir/src/scheduler_main.cpp.o -MF CMakeFiles/scheduler.dir/src/scheduler_main.cpp.o.d -o CMakeFiles/scheduler.dir/src/scheduler_main.cpp.o -c /home/admin_xhy/TaskHive/src/scheduler_main.cpp
 
 CMakeFiles/scheduler.dir/src/scheduler_main.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/scheduler.dir/src/scheduler_main.cpp.i"
-	/usr/bin/aarch64-linux-gnu-g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/admin_xhy/TaskHive/src/scheduler_main.cpp > CMakeFiles/scheduler.dir/src/scheduler_main.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/admin_xhy/TaskHive/src/scheduler_main.cpp > CMakeFiles/scheduler.dir/src/scheduler_main.cpp.i
 
 CMakeFiles/scheduler.dir/src/scheduler_main.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/scheduler.dir/src/scheduler_main.cpp.s"
-	/usr/bin/aarch64-linux-gnu-g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/admin_xhy/TaskHive/src/scheduler_main.cpp -o CMakeFiles/scheduler.dir/src/scheduler_main.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/admin_xhy/TaskHive/src/scheduler_main.cpp -o CMakeFiles/scheduler.dir/src/scheduler_main.cpp.s
 
 CMakeFiles/scheduler.dir/src/scheduler.cpp.o: CMakeFiles/scheduler.dir/flags.make
 CMakeFiles/scheduler.dir/src/scheduler.cpp.o: /home/admin_xhy/TaskHive/src/scheduler.cpp
 CMakeFiles/scheduler.dir/src/scheduler.cpp.o: CMakeFiles/scheduler.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/admin_xhy/TaskHive/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/scheduler.dir/src/scheduler.cpp.o"
-	/usr/bin/aarch64-linux-gnu-g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/scheduler.dir/src/scheduler.cpp.o -MF CMakeFiles/scheduler.dir/src/scheduler.cpp.o.d -o CMakeFiles/scheduler.dir/src/scheduler.cpp.o -c /home/admin_xhy/TaskHive/src/scheduler.cpp
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/scheduler.dir/src/scheduler.cpp.o -MF CMakeFiles/scheduler.dir/src/scheduler.cpp.o.d -o CMakeFiles/scheduler.dir/src/scheduler.cpp.o -c /home/admin_xhy/TaskHive/src/scheduler.cpp
 
 CMakeFiles/scheduler.dir/src/scheduler.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/scheduler.dir/src/scheduler.cpp.i"
-	/usr/bin/aarch64-linux-gnu-g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/admin_xhy/TaskHive/src/scheduler.cpp > CMakeFiles/scheduler.dir/src/scheduler.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/admin_xhy/TaskHive/src/scheduler.cpp > CMakeFiles/scheduler.dir/src/scheduler.cpp.i
 
 CMakeFiles/scheduler.dir/src/scheduler.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/scheduler.dir/src/scheduler.cpp.s"
-	/usr/bin/aarch64-linux-gnu-g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/admin_xhy/TaskHive/src/scheduler.cpp -o CMakeFiles/scheduler.dir/src/scheduler.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/admin_xhy/TaskHive/src/scheduler.cpp -o CMakeFiles/scheduler.dir/src/scheduler.cpp.s
 
 CMakeFiles/scheduler.dir/src/redis_client.cpp.o: CMakeFiles/scheduler.dir/flags.make
 CMakeFiles/scheduler.dir/src/redis_client.cpp.o: /home/admin_xhy/TaskHive/src/redis_client.cpp
 CMakeFiles/scheduler.dir/src/redis_client.cpp.o: CMakeFiles/scheduler.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/admin_xhy/TaskHive/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/scheduler.dir/src/redis_client.cpp.o"
-	/usr/bin/aarch64-linux-gnu-g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/scheduler.dir/src/redis_client.cpp.o -MF CMakeFiles/scheduler.dir/src/redis_client.cpp.o.d -o CMakeFiles/scheduler.dir/src/redis_client.cpp.o -c /home/admin_xhy/TaskHive/src/redis_client.cpp
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/scheduler.dir/src/redis_client.cpp.o -MF CMakeFiles/scheduler.dir/src/redis_client.cpp.o.d -o CMakeFiles/scheduler.dir/src/redis_client.cpp.o -c /home/admin_xhy/TaskHive/src/redis_client.cpp
 
 CMakeFiles/scheduler.dir/src/redis_client.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/scheduler.dir/src/redis_client.cpp.i"
-	/usr/bin/aarch64-linux-gnu-g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/admin_xhy/TaskHive/src/redis_client.cpp > CMakeFiles/scheduler.dir/src/redis_client.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/admin_xhy/TaskHive/src/redis_client.cpp > CMakeFiles/scheduler.dir/src/redis_client.cpp.i
 
 CMakeFiles/scheduler.dir/src/redis_client.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/scheduler.dir/src/redis_client.cpp.s"
-	/usr/bin/aarch64-linux-gnu-g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/admin_xhy/TaskHive/src/redis_client.cpp -o CMakeFiles/scheduler.dir/src/redis_client.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/admin_xhy/TaskHive/src/redis_client.cpp -o CMakeFiles/scheduler.dir/src/redis_client.cpp.s
 
 CMakeFiles/scheduler.dir/src/zk_client.cpp.o: CMakeFiles/scheduler.dir/flags.make
 CMakeFiles/scheduler.dir/src/zk_client.cpp.o: /home/admin_xhy/TaskHive/src/zk_client.cpp
 CMakeFiles/scheduler.dir/src/zk_client.cpp.o: CMakeFiles/scheduler.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/admin_xhy/TaskHive/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/scheduler.dir/src/zk_client.cpp.o"
-	/usr/bin/aarch64-linux-gnu-g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/scheduler.dir/src/zk_client.cpp.o -MF CMakeFiles/scheduler.dir/src/zk_client.cpp.o.d -o CMakeFiles/scheduler.dir/src/zk_client.cpp.o -c /home/admin_xhy/TaskHive/src/zk_client.cpp
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/scheduler.dir/src/zk_client.cpp.o -MF CMakeFiles/scheduler.dir/src/zk_client.cpp.o.d -o CMakeFiles/scheduler.dir/src/zk_client.cpp.o -c /home/admin_xhy/TaskHive/src/zk_client.cpp
 
 CMakeFiles/scheduler.dir/src/zk_client.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/scheduler.dir/src/zk_client.cpp.i"
-	/usr/bin/aarch64-linux-gnu-g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/admin_xhy/TaskHive/src/zk_client.cpp > CMakeFiles/scheduler.dir/src/zk_client.cpp.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/admin_xhy/TaskHive/src/zk_client.cpp > CMakeFiles/scheduler.dir/src/zk_client.cpp.i
 
 CMakeFiles/scheduler.dir/src/zk_client.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/scheduler.dir/src/zk_client.cpp.s"
-	/usr/bin/aarch64-linux-gnu-g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/admin_xhy/TaskHive/src/zk_client.cpp -o CMakeFiles/scheduler.dir/src/zk_client.cpp.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/admin_xhy/TaskHive/src/zk_client.cpp -o CMakeFiles/scheduler.dir/src/zk_client.cpp.s
 
 CMakeFiles/scheduler.dir/proto/task.pb.cc.o: CMakeFiles/scheduler.dir/flags.make
 CMakeFiles/scheduler.dir/proto/task.pb.cc.o: /home/admin_xhy/TaskHive/proto/task.pb.cc
 CMakeFiles/scheduler.dir/proto/task.pb.cc.o: CMakeFiles/scheduler.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/admin_xhy/TaskHive/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/scheduler.dir/proto/task.pb.cc.o"
-	/usr/bin/aarch64-linux-gnu-g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/scheduler.dir/proto/task.pb.cc.o -MF CMakeFiles/scheduler.dir/proto/task.pb.cc.o.d -o CMakeFiles/scheduler.dir/proto/task.pb.cc.o -c /home/admin_xhy/TaskHive/proto/task.pb.cc
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/scheduler.dir/proto/task.pb.cc.o -MF CMakeFiles/scheduler.dir/proto/task.pb.cc.o.d -o CMakeFiles/scheduler.dir/proto/task.pb.cc.o -c /home/admin_xhy/TaskHive/proto/task.pb.cc
 
 CMakeFiles/scheduler.dir/proto/task.pb.cc.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/scheduler.dir/proto/task.pb.cc.i"
-	/usr/bin/aarch64-linux-gnu-g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/admin_xhy/TaskHive/proto/task.pb.cc > CMakeFiles/scheduler.dir/proto/task.pb.cc.i
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/admin_xhy/TaskHive/proto/task.pb.cc > CMakeFiles/scheduler.dir/proto/task.pb.cc.i
 
 CMakeFiles/scheduler.dir/proto/task.pb.cc.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/scheduler.dir/proto/task.pb.cc.s"
-	/usr/bin/aarch64-linux-gnu-g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/admin_xhy/TaskHive/proto/task.pb.cc -o CMakeFiles/scheduler.dir/proto/task.pb.cc.s
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/admin_xhy/TaskHive/proto/task.pb.cc -o CMakeFiles/scheduler.dir/proto/task.pb.cc.s
 
 # Object files for target scheduler
 scheduler_OBJECTS = \
