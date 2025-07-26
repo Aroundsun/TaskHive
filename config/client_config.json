@@ -1,0 +1,12 @@
+{
+    "zk": {
+        "host": "127.0.0.1:2181",
+        "path": "/TaskHive/schedulers"
+    },
+    "redis": {
+        "host": "127.0.0.1",
+        "port": 6379,
+        "password": ""
+    },
+    "update_interval": 1000
+}

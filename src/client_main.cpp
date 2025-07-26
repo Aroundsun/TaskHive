@@ -9,8 +9,7 @@ int main() {
     
     // 启动客户端
     client.start();
-    
-    //创建以一个任务
+
 
     taskscheduler::Task task;
     task.set_task_id("task-1");
@@ -50,7 +49,7 @@ int main() {
     taskscheduler::TaskResult task_result1 = client.get_task_result(task_id1);
     std::cout << "任务结果: " << task_result1.output() << std::endl;
 
-
+    
    
 
     return 0;

@@ -77,7 +77,7 @@ std::string ZkClient::getNodeData(const std::string& path) {
     std::shared_lock<std::shared_mutex> lock(mtx_); //共享锁- 读锁
     int ret = zoo_get(zh_, path.c_str(), 0, buffer, &buffer_len, nullptr);
     if (ret != ZOK) {
-        // 处理错误
+
         return "";
     }
     return std::string(buffer, buffer_len);

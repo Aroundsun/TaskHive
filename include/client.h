@@ -110,10 +110,10 @@ private:
     std::mutex taskresult_mutex_;
     
     struct SchedulerNodeInfo{
-        std::string node_id;
         std::string ip;
         int port;
         std::unordered_map<std::string,std::string> descriptor;
+        bool undata_flag;
     };
     //缓存所有健康的调度器节点
     std::unordered_map<std::string,SchedulerNodeInfo> hearly_secheduler_node_table_;

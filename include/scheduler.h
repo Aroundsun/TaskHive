@@ -9,6 +9,7 @@
 #include "redis_client.h"
 #include<queue>
 #include<condition_variable>
+#include"scheduler_config.h"
 //调度器
 class scheduler{
 
@@ -36,12 +37,6 @@ public:
 
     //上报心跳
     void report_heartbeat_thread_function();
-
-    //组装好的健康调度器心跳信息
-    taskscheduler::SchedulerHeartbeat get_healthy_scheduler_heartbeat() const;
-
-    //组装好一个不健康的调度器心跳信息
-    taskscheduler::SchedulerHeartbeat get_unhealthy_scheduler_heartbeat() const;
 
     //上报健康心跳
     void report_healthy_heartbeat_to_zk();

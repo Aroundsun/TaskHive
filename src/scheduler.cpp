@@ -7,39 +7,36 @@
 #include <errno.h>
 #include <sys/types.h>
 
-// 待配置信息
+SchedConfig* config = SchedConfig::GetInstance("../config/scheduler_config.json");
+
 // zk配置
-const std::string ZK_HOST = "127.0.0.1:2181";
-const std::string ZK_ROOT_PATH = "/TaskHive";
-const std::string ZK_PATH = ZK_ROOT_PATH + "/schedulers";
-const std::string ZK_NODE = "scheduler-1";
+const std::string ZK_HOST = config->get_zk_host();
+const std::string ZK_ROOT_PATH = config->get_zk_root_path();
+const std::string ZK_PATH = config->get_zk_path();
+const std::string ZK_NODE = config->get_zk_node();
+
 // redis配置
-const std::string REDIS_HOST = "127.0.0.1";
-const int REDIS_PORT = 6379;
-const std::string REDIS_PASSWORD = "";
+const std::string REDIS_HOST = config->get_redis_ip();
+const int REDIS_PORT = config->get_redis_port();
+const std::string REDIS_PASSWORD = config->get_redis_passwd();
 
 // rabbitmq配置
-const std::string RABBITMQ_HOST = "127.0.0.1";
-const int RABBITMQ_PORT = 5672;
-const std::string RABBITMQ_USER = "guest";
-const std::string RABBITMQ_PASSWORD = "guest";
-const int SCHEDULER_TASK_CHANNEL_ID = 1;
-const int SCHEDULER_RESULT_CHANNEL_ID = 2;
+const std::string RABBITMQ_HOST = config->get_rabbitmq_ip();
+const int RABBITMQ_PORT = config->get_rabbitmq_port();
+const std::string RABBITMQ_USER = config->get_rabbitmq_user();
+const std::string RABBITMQ_PASSWORD = config->get_rabbitmq_password();
+const int SCHEDULER_TASK_CHANNEL_ID = config->get_scheduler_task_channel_id();
+const int SCHEDULER_RESULT_CHANNEL_ID = config->get_scheduler_result_channel_id();
 
 // 能力描述
-const std::map<std::string, std::string> DEC = {
-    {"cpu", "10"},
-    {"memory", "10G"},
-    {"disk", "100G"},
-    {"network", "100M"},
-};
+const std::unordered_map<std::string, std::string> DEC = config->get_dec();
 
-// 心跳时间间隔 单位 毫秒
-const int HEARTBEAT_INTERVAL = 10000;
+// 心跳时间间隔（毫秒）
+const int HEARTBEAT_INTERVAL = config->get_heartbeat_interval();
 
 // 接收任务配置
-const std::string RECEIVE_TASK_HOST = "127.0.0.1";
-const int RECEIVE_TASK_PORT = 12345;
+const std::string RECEIVE_TASK_HOST = config->get_receive_task_host();
+const int RECEIVE_TASK_PORT = config->get_receive_task_port();
 
 scheduler::scheduler() : running_(false)
 {
@@ -59,7 +56,26 @@ void scheduler::start()
         return;
     }
     running_ = true;
-    // 启动上报心跳线程
+    // 启动上报心跳线程 同时注册zk 临时健康节点
+    taskscheduler::SchedulerHeartbeat heartbeat;
+    heartbeat.set_scheduler_id(ZK_NODE);
+    heartbeat.set_scheduler_ip(RECEIVE_TASK_HOST);
+    heartbeat.set_scheduler_port(RECEIVE_TASK_PORT);
+    heartbeat.set_timetamp(time(nullptr));
+    heartbeat.set_is_healthy(true);
+    // 将能力描述添加到心跳数据
+    for (auto &item : DEC)
+    {
+        heartbeat.mutable_dec()->insert({item.first, item.second});
+    }
+
+    std::string heartbeat_data;
+    // 将节点数据序列化
+    heartbeat.SerializeToString(&heartbeat_data);
+    if (!zkcli_->createNode(ZK_PATH + "/" + ZK_NODE, heartbeat_data, ZOO_EPHEMERAL))
+    {
+        throw std::runtime_error("创建Zookeeper节点失败");
+    }
     report_heartbeat_thread_ = std::thread(&scheduler::report_heartbeat_thread_function, this);
     // 启动获取任务线程
     receive_task_thread_ = std::thread(&scheduler::receive_task_thread_function, this);
@@ -123,16 +139,6 @@ void scheduler::init()
             {
                 throw std::runtime_error("创建Zookeeper调度器根节点失败");
             }
-        }
-        // 初始化zk节点
-        std::string heartbeat_data;
-        taskscheduler::SchedulerHeartbeat heartbeat = get_healthy_scheduler_heartbeat();
-        // 心跳数据序列化成
-        heartbeat.SerializeToString(&heartbeat_data);
-        // 创建当前调度器节点 --临时节点
-        if (!zkcli_->createNode(ZK_PATH + "/" + ZK_NODE, heartbeat_data, ZOO_EPHEMERAL))
-        {
-            throw std::runtime_error("创建Zookeeper节点失败");
         }
 
         // 初始化redis客户端
@@ -351,8 +357,10 @@ void scheduler::report_heartbeat_thread_function()
     //退出时上报不健康心跳
     report_unhealthy_heartbeat_to_zk();
 }
-//组装好的健康调度器心跳信息
-taskscheduler::SchedulerHeartbeat scheduler::get_healthy_scheduler_heartbeat() const
+
+
+//上报健康心跳实现
+void scheduler::report_healthy_heartbeat_to_zk()
 {
     //组装心跳数据
     taskscheduler::SchedulerHeartbeat heartbeat;
@@ -366,26 +374,7 @@ taskscheduler::SchedulerHeartbeat scheduler::get_healthy_scheduler_heartbeat() c
     {
         heartbeat.mutable_dec()->insert({item.first, item.second});
     }
-    return heartbeat;
-}
-//组装好一个不健康的调度器心跳信息
-taskscheduler::SchedulerHeartbeat scheduler::get_unhealthy_scheduler_heartbeat() const
-{
-    //组装心跳数据
-    taskscheduler::SchedulerHeartbeat heartbeat;
-    heartbeat.set_scheduler_id(ZK_NODE);
-    heartbeat.set_scheduler_ip(RECEIVE_TASK_HOST);
-    heartbeat.set_scheduler_port(RECEIVE_TASK_PORT);
-    heartbeat.set_timetamp(time(nullptr));
-    heartbeat.set_is_healthy(false);
-    return heartbeat;
-}
 
-//上报健康心跳实现
-void scheduler::report_healthy_heartbeat_to_zk()
-{
-    //组装心跳数据
-    taskscheduler::SchedulerHeartbeat heartbeat = get_healthy_scheduler_heartbeat();
     std::string heartbeat_data;
     // 将节点数据序列化
     heartbeat.SerializeToString(&heartbeat_data);
@@ -401,7 +390,12 @@ void scheduler::report_healthy_heartbeat_to_zk()
 void scheduler::report_unhealthy_heartbeat_to_zk()
 {
     //组装心跳数据
-    taskscheduler::SchedulerHeartbeat heartbeat = get_unhealthy_scheduler_heartbeat();
+    taskscheduler::SchedulerHeartbeat heartbeat;
+    heartbeat.set_scheduler_id(ZK_NODE);
+    heartbeat.set_scheduler_ip(RECEIVE_TASK_HOST);
+    heartbeat.set_scheduler_port(RECEIVE_TASK_PORT);
+    heartbeat.set_timetamp(time(nullptr));
+    heartbeat.set_is_healthy(false);
     std::string heartbeat_data;
     // 将节点数据序列化
     heartbeat.SerializeToString(&heartbeat_data);

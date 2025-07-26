@@ -28,7 +28,7 @@ public:
     // 删除节点
     bool deleteNode(const std::string &path);
 
-    // 获取这个path 下所有节点
+    // 获取这个path 下所有节点路径
     std::vector<std::string> getAllNode(const std::string &path);
 
     // 判断节点是否存在

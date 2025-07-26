@@ -5,36 +5,30 @@
 #include <fstream>
 #include <json/json.h>
 #include <thread>
-// 工作器配置
-const std::string WORKER_HOST = "127.0.0.1";
-const int WORKER_PORT = 12346;
 
-// 配置信息
-// 工作端ID
-const std::string WORKER_ID = "worker-1";
-// zk 地址
-const std::string WORKER_ZK_ADDR = "127.0.0.1:2181";
-const std::string ZK_ROOT_PATH = "/TaskHive";
-const std::string ZK_PATH = ZK_ROOT_PATH + "/workers";
-const std::string ZK_NODE = "worker-1";
-
-// rabbitmq配置
-const std::string RABBITMQ_HOST = "127.0.0.1";
-const int RABBITMQ_PORT = 5672;
-const std::string RABBITMQ_USER = "guest";
-const std::string RABBITMQ_PASSWORD = "guest";
-const int WORKER_TASK_CHANNEL_ID = 3;
-const int WORKER_RESULT_CHANNEL_ID = 4;
-
+#include"worker_config.h"
 // 函数库
-const char *FUNCTION_LIB = "libmyfuncs.so";
-// 能力描述
-const std::map<std::string, std::string> DEC = {
-    {"cpu", "8"},
-    {"memory", "8G"},
-    {"disk", "50G"},
-    {"network", "100M"},
-};
+const char *FUNCTION_LIB = "../lib/libmyfuncs.so";
+WorkerConfig* config = WorkerConfig::GetInstance("../config/worker_config.json");
+
+const std::string WORKER_HOST = config->get_worker_ip();
+const int WORKER_PORT = config->get_worker_port();
+const std::string WORKER_ID = config->get_worker_id();
+
+const std::string WORKER_ZK_ADDR = config->get_zk_host();
+const std::string ZK_ROOT_PATH = config->get_zk_root_path();
+const std::string ZK_PATH = config->get_zk_path();
+const std::string ZK_NODE = config->get_zk_node();
+
+const std::string RABBITMQ_HOST = config->get_rabbitmq_ip();
+const int RABBITMQ_PORT = config->get_rabbitmq_port();
+const std::string RABBITMQ_USER = config->get_rabbitmq_user();
+const std::string RABBITMQ_PASSWORD = config->get_rabbitmq_password();
+const int WORKER_TASK_CHANNEL_ID = config->get_task_channel_id();
+const int WORKER_RESULT_CHANNEL_ID = config->get_result_channel_id();
+
+auto DEC = config->get_capabilities();
+
 
 Worker::Worker() : running_(false)
 {

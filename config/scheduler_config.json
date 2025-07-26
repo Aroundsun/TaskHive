@@ -1,0 +1,32 @@
+{
+    "zk": {
+        "host": "127.0.0.1:2181",
+        "root_path": "/TaskHive",
+        "path": "/TaskHive/schedulers",
+        "node": "scheduler-1"
+    },
+    "redis": {
+        "host": "127.0.0.1",
+        "port": 6379,
+        "password": ""
+    },
+    "rabbitmq": {
+        "host": "127.0.0.1",
+        "port": 5672,
+        "user": "guest",
+        "password": "guest",
+        "task_channel_id": 1,
+        "result_channel_id": 2
+    },
+    "capabilities": {
+        "cpu": "10",
+        "memory": "10G",
+        "disk": "100G",
+        "network": "100M"
+    },
+    "heartbeat_interval": 10000,
+    "receive_task": {
+        "host": "127.0.0.1",
+        "port": 12345
+    }
+}

@@ -5,14 +5,16 @@
 #include <iostream>
 #include <thread>
 #include<json/json.h>
-
+#include"client_config.h"
+ClientConfig* config = ClientConfig::GetInstance("../config/client_config.json");
 //zk配置
-const std::string ZK_HOST = "127.0.0.1:2181";
-const std::string ZK_PATH = "/TaskHive/schedulers";
+const std::string ZK_HOST = config->get_zk_host();
+const std::string ZK_PATH = config->get_zk_path();
 //redis配置
-const std::string REDIS_HOST = "127.0.0.1";
-const int REDIS_PORT = 6379;
-const std::string REDIS_PASSWORD = "";
+const std::string REDIS_HOST = config->get_redis_host();
+const int REDIS_PORT = config->get_redis_port();
+const std::string REDIS_PASSWORD = config->get_redis_password();
+
 //构造函数
 Client::Client():running_(false){
     init();

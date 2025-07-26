@@ -44,7 +44,7 @@ message TaskResult {
 message WorkerHeartbeat {
     string worker_id = 1;         // 执行器ID
     string worker_ip = 2;         // 执行器IP
-    int32 worker_port = 3;        // 执行器端口
+    int32 worker_port = 3;        // 执行器端口 //方便后边扩展
     int64 timestamp = 4;          // 心跳时间戳
     bool is_healthy = 5;          // 健康状态
     map<string,string> dec = 6;   //能力描述 

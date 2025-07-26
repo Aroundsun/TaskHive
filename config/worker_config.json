@@ -1,0 +1,28 @@
+{
+    "worker":{
+        "ip": "127.0.0.1",
+        "port": 123456,
+        "id" : "worker-1"
+    },
+    "zk": {
+        "host": "127.0.0.1:2181",
+        "root_path": "/TaskHive",
+        "path": "/TaskHive/workers",
+        "node": "worker-1"
+    },
+    "rabbitmq": {
+        "host": "127.0.0.1",
+        "port": 5672,
+        "user": "guest",
+        "password": "guest",
+        "task_channel_id": 1,
+        "result_channel_id": 2
+    },
+    "capabilities": {
+        "cpu": "4",
+        "memory": "4G",
+        "disk": "50G",
+        "network": "50M"
+    },
+    "heartbeat_interval": 10000
+}
