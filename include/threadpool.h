@@ -11,6 +11,9 @@
 
 #include <unordered_map>
 #include <queue>
+/*
+  暂时不集成线程池，需要完善优化原有的功能
+*/
 enum Thread_Mode
 {
     FIXED = 0,

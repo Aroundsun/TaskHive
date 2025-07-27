@@ -93,3 +93,5 @@ Aborted (core dumped)
 解决办法，修改配置文件，让channel 不冲突
 
 
+
+

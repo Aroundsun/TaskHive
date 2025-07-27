@@ -139,7 +139,7 @@ auto ThreadPool::submit(F&& f, Args&&... args)
         }
         
         // 创建任务包装器
-        auto task_wrapper = std::make_unique<FunctionTask<std::function<void()>>>([task]() {
+        auto task_wrapper = std::make_unique<FunctionTask<void()>>([task]() {
             (*task)();
         });
         
