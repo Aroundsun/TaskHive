@@ -1,0 +1,53 @@
+cmake_minimum_required(VERSION 3.10)
+project(ThreadPool)
+
+# 设置C++标准
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# 设置编译类型为Debug
+set(CMAKE_BUILD_TYPE Debug)
+
+# 设置编译选项
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -O0 -Wall -Wextra")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -DNDEBUG")
+
+# 查找线程库
+find_package(Threads REQUIRED)
+
+# 创建线程池库
+add_library(thread_pool_lib
+    thread_pool.cpp
+    thread_pool.h
+)
+
+# 设置线程池库的属性
+target_include_directories(thread_pool_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(thread_pool_lib Threads::Threads)
+
+# 创建演示程序
+add_executable(thread_pool_demo
+    thread_pool_demo.cpp
+)
+
+# 链接线程池库
+target_link_libraries(thread_pool_demo thread_pool_lib)
+
+# 设置输出目录
+set_target_properties(thread_pool_demo PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
+# 安装规则
+install(TARGETS thread_pool_demo
+    RUNTIME DESTINATION bin
+)
+
+install(FILES thread_pool.h
+    DESTINATION include
+)
+
+# 打印信息
+message(STATUS "线程池项目配置完成")
+message(STATUS "构建类型: ${CMAKE_BUILD_TYPE}")
+message(STATUS "C++标准: ${CMAKE_CXX_STANDARD}") 

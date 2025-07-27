@@ -1,0 +1,2 @@
+/usr/bin/ar qc libthread_pool_lib.a CMakeFiles/thread_pool_lib.dir/home/admin_xhy/TaskHive/thread_pool.cpp.o
+/usr/bin/ranlib libthread_pool_lib.a
