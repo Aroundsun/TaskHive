@@ -76,6 +76,10 @@ void scheduler::start()
     {
         throw std::runtime_error("创建Zookeeper节点失败");
     }
+    
+    // 启动系统信息维护线程
+    system_info_maintenance_thread_ = std::thread(&scheduler::system_info_maintenance_thread_function, this);
+    
     report_heartbeat_thread_ = std::thread(&scheduler::report_heartbeat_thread_function, this);
     // 启动获取任务线程
     receive_task_thread_ = std::thread(&scheduler::receive_task_thread_function, this);
@@ -198,38 +202,37 @@ void scheduler::stop() {
         listen_socket_fd_ = -1;
     }
     // join所有线程，确保先关闭channel再join线程
-    if (report_heartbeat_thread_.joinable()){
-        report_heartbeat_thread_.join();
-        std::cout << "上报心跳线程已停止" << std::endl;
-    }
-    if (receive_task_thread_.joinable()){
+    if (receive_task_thread_.joinable())
+    {
         receive_task_thread_.join();
         std::cout << "接收任务线程已停止" << std::endl;
     }
-    if (submit_task_thread_.joinable()){
+    if (submit_task_thread_.joinable())
+    {
         submit_task_thread_.join();
         std::cout << "提交任务线程已停止" << std::endl;
     }
-    if (get_task_result_thread_.joinable()){
+    if (get_task_result_thread_.joinable())
+    {
         get_task_result_thread_.join();
         std::cout << "获取任务结果线程已停止" << std::endl;
     }
-
-    // 关闭zk、redis等资源
-    if (zkcli_){
+    if (report_heartbeat_thread_.joinable())
+    {
+        report_heartbeat_thread_.join();
+        std::cout << "上报心跳线程已停止" << std::endl;
+    }
+    if (system_info_maintenance_thread_.joinable())
+    {
+        system_info_maintenance_thread_.join();
+        std::cout << "系统信息维护线程已停止" << std::endl;
+    }
+    // 关闭zk客户端
+    if (zkcli_)
+    {
         zkcli_->close();
         std::cout << "关闭zk客户端" << std::endl;
     }
-    if (rediscli_){
-        rediscli_->close();
-        std::cout << "关闭redis客户端" << std::endl;
-    }
-    if (!pending_tasks_.empty())
-    {
-        std::cout << "待处理任务数量: " << pending_tasks_.size() << std::endl;
-        // TODO: 实现分发: 将待执行的任务分发给一个健康的调度器节点
-    }
-    std::cout << "调度器已停止" << std::endl;
 }
 
 // 接收任务实现
@@ -373,11 +376,19 @@ void scheduler::report_healthy_heartbeat_to_zk()
     heartbeat.set_scheduler_port(RECEIVE_TASK_PORT);
     heartbeat.set_timetamp(time(nullptr));
     heartbeat.set_is_healthy(true);
+    
     // 将能力描述添加到心跳数据
     for (auto &item : DEC)
     {
         heartbeat.mutable_dec()->insert({item.first, item.second});
     }
+    
+    // 从维护的系统信息中获取使用率数据
+    SystemInfo sys_info = get_system_info();
+    heartbeat.mutable_dec()->insert({"cpu_usage", std::to_string(sys_info.cpu_usage)});
+    heartbeat.mutable_dec()->insert({"memory_usage", std::to_string(sys_info.memory_usage)});
+    heartbeat.mutable_dec()->insert({"disk_usage", std::to_string(sys_info.disk_usage)});
+    heartbeat.mutable_dec()->insert({"network_speed", std::to_string(sys_info.network_speed)});
 
     std::string heartbeat_data;
     // 将节点数据序列化
@@ -410,5 +421,117 @@ void scheduler::report_unhealthy_heartbeat_to_zk()
     else{
         throw std::runtime_error("zkcli_ is null");
     }
+}
+
+// 系统信息维护线程实现
+void scheduler::system_info_maintenance_thread_function()
+{
+    while (running_)
+    {
+        try
+        {
+            update_system_info();
+            // 每5秒更新一次系统信息
+            std::this_thread::sleep_for(std::chrono::seconds(5));
+        }
+        catch (const std::exception &e)
+        {
+            std::cerr << "系统信息维护线程异常: " << e.what() << std::endl;
+            std::this_thread::sleep_for(std::chrono::seconds(10));
+        }
+    }
+}
+
+// 更新系统信息
+void scheduler::update_system_info()
+{
+    SystemInfo new_info;
+    
+    try {
+        // 获取CPU使用率
+        FILE* cpu_file = fopen("/proc/loadavg", "r");
+        if (cpu_file) {
+            float load1, load5, load15;
+            fscanf(cpu_file, "%f %f %f", &load1, &load5, &load15);
+            fclose(cpu_file);
+            new_info.cpu_usage = (load1 * 100.0) / 4.0; // 假设4核CPU
+            std::cout << "CPU使用率: " << new_info.cpu_usage << "%" << std::endl;
+        }
+        
+        // 获取内存使用率
+        FILE* mem_file = fopen("/proc/meminfo", "r");
+        if (mem_file) {
+            long total_mem = 0, available_mem = 0;
+            char line[256];
+            while (fgets(line, sizeof(line), mem_file)) {
+                if (strncmp(line, "MemTotal:", 9) == 0) {
+                    sscanf(line, "MemTotal: %ld", &total_mem);
+                } else if (strncmp(line, "MemAvailable:", 13) == 0) {
+                    sscanf(line, "MemAvailable: %ld", &available_mem);
+                }
+            }
+            fclose(mem_file);
+            if (total_mem > 0) {
+                new_info.memory_usage = ((total_mem - available_mem) * 100.0) / total_mem;
+                std::cout << "内存使用率: " << new_info.memory_usage << "%" << std::endl;
+            }
+        }
+        
+        // 获取磁盘使用率
+        FILE* disk_file = popen("df / 2>/dev/null | tail -1 | awk '{print $5}' | sed 's/%//'", "r");
+        if (disk_file) {
+            char disk_usage_str[16];
+            if (fgets(disk_usage_str, sizeof(disk_usage_str), disk_file)) {
+                // 移除换行符
+                disk_usage_str[strcspn(disk_usage_str, "\n")] = 0;
+                try {
+                    new_info.disk_usage = std::stod(disk_usage_str);
+                    std::cout << "磁盘使用率: " << new_info.disk_usage << "%" << std::endl;
+                } catch (const std::exception& e) {
+                    std::cerr << "磁盘使用率解析失败: " << e.what() << std::endl;
+                    new_info.disk_usage = 20.0; // 默认值
+                }
+            } else {
+                new_info.disk_usage = 20.0; // 默认值
+            }
+            pclose(disk_file);
+        } else {
+            new_info.disk_usage = 20.0; // 默认值
+        }
+        
+        // 获取网络速度（使用默认值）太复杂
+        new_info.network_speed = 1000.0; 
+        std::cout << "网络速度: " << new_info.network_speed << " Mbps" << std::endl;
+        
+        // 更新时间戳
+        new_info.timestamp = std::to_string(time(nullptr));
+        
+        // 更新系统信息
+        {
+            std::lock_guard<std::mutex> lock(system_info_mutex_);
+            current_system_info_ = new_info;
+        }
+        
+    } catch (const std::exception& e) {
+        std::cerr << "获取系统使用率失败: " << e.what() << std::endl;
+        // 如果获取失败，使用默认值
+        new_info.cpu_usage = 0.0;
+        new_info.memory_usage = 0.0;
+        new_info.disk_usage = 20.0;
+        new_info.network_speed = 1000.0; // 默认值
+        new_info.timestamp = std::to_string(time(nullptr));
+        
+        {
+            std::lock_guard<std::mutex> lock(system_info_mutex_);
+            current_system_info_ = new_info;
+        }
+    }
+}
+
+// 获取系统信息
+SystemInfo scheduler::get_system_info() const
+{
+    std::lock_guard<std::mutex> lock(system_info_mutex_);
+    return current_system_info_;
 }
 

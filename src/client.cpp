@@ -506,12 +506,12 @@ std::pair<std::string,int> Client::cpu_priority_load_balance()
     {
         throw std::runtime_error("no healthy scheduler node!!!!");
     }
-    //获取CPU 使用率最高的调度器节点
-    auto max_cpu_usage_node = std::max_element(hearly_secheduler_node_table_.begin(),hearly_secheduler_node_table_.end(),[](const auto& a,const auto& b){
-        //比较CPU 使用率 返回使用率最高的调度器节点
+    //获取CPU 使用率最低的调度器节点
+    auto min_cpu_usage_node = std::min_element(hearly_secheduler_node_table_.begin(),hearly_secheduler_node_table_.end(),[](const auto& a,const auto& b){
+        //比较CPU 使用率 返回使用率最低的调度器节点
         return a.second.cpu_usage < b.second.cpu_usage;
     });
-    return {max_cpu_usage_node->second.ip,max_cpu_usage_node->second.port};
+    return {min_cpu_usage_node->second.ip,min_cpu_usage_node->second.port};
 }
 //内存优先负载均衡
 std::pair<std::string,int> Client::memory_priority_load_balance()
@@ -522,12 +522,12 @@ std::pair<std::string,int> Client::memory_priority_load_balance()
     {
         throw std::runtime_error("no healthy scheduler node!!!!");
     }
-    //获取内存使用率最高的调度器节点
-    auto max_memory_usage_node = std::max_element(hearly_secheduler_node_table_.begin(),hearly_secheduler_node_table_.end(),[](const auto& a,const auto& b){
-        //比较内存使用率 返回使用率最高的调度器节点
+    //获取内存使用率最低的调度器节点
+    auto min_memory_usage_node = std::min_element(hearly_secheduler_node_table_.begin(),hearly_secheduler_node_table_.end(),[](const auto& a,const auto& b){
+        //比较内存使用率 返回使用率最低的调度器节点
         return a.second.memory_usage < b.second.memory_usage;
     });
-    return {max_memory_usage_node->second.ip,max_memory_usage_node->second.port};
+    return {min_memory_usage_node->second.ip,min_memory_usage_node->second.port};
 }
 //磁盘优先负载均衡
 std::pair<std::string,int> Client::disk_priority_load_balance()
@@ -538,12 +538,12 @@ std::pair<std::string,int> Client::disk_priority_load_balance()
     {
         throw std::runtime_error("no healthy scheduler node!!!!");
     }
-    //获取磁盘使用率最高的调度器节点
-    auto max_disk_usage_node = std::max_element(hearly_secheduler_node_table_.begin(),hearly_secheduler_node_table_.end(),[](const auto& a,const auto& b){
-        //比较磁盘使用率 返回使用率最高的调度器节点
+    //获取磁盘使用率最低的调度器节点
+    auto min_disk_usage_node = std::min_element(hearly_secheduler_node_table_.begin(),hearly_secheduler_node_table_.end(),[](const auto& a,const auto& b){
+        //比较磁盘使用率 返回使用率最低的调度器节点
         return a.second.disk_usage < b.second.disk_usage;
     });
-    return {max_disk_usage_node->second.ip,max_disk_usage_node->second.port};
+    return {min_disk_usage_node->second.ip,min_disk_usage_node->second.port};
 }
 //网速优先负载均衡
 std::pair<std::string,int> Client::network_priority_load_balance()
@@ -570,12 +570,12 @@ std::pair<std::string,int> Client::combined_load_balance()
     {
         throw std::runtime_error("no healthy scheduler node!!!!");
     }
-    //获取综合得分最高的调度器节点
-    auto max_combined_score_node = std::max_element(hearly_secheduler_node_table_.begin(),hearly_secheduler_node_table_.end(),[this](const auto& a,const auto& b){  
-        //比较综合得分 返回得分最高的调度器节点
+    //获取综合得分最低的调度器节点（得分越低表示负载越轻）
+    auto min_combined_score_node = std::min_element(hearly_secheduler_node_table_.begin(),hearly_secheduler_node_table_.end(),[this](const auto& a,const auto& b){  
+        //比较综合得分 返回得分最低的调度器节点
         return get_combined_score(a.second) < get_combined_score(b.second);
     });
-    return {max_combined_score_node->second.ip,max_combined_score_node->second.port};
+    return {min_combined_score_node->second.ip,min_combined_score_node->second.port};
 }
 //根据权重获取综合得分
 double Client::get_combined_score(const SchedulerNodeInfo& node_info)
@@ -587,6 +587,6 @@ double Client::get_combined_score(const SchedulerNodeInfo& node_info)
     double network_weight = load_balance_weight_["network_usage"];
     //计算综合得分
     double combined_score = cpu_weight * node_info.cpu_usage + memory_weight * node_info.memory_usage + 
-                            disk_weight * node_info.disk_usage + network_weight * node_info.network_usage;
+                            disk_weight * node_info.disk_usage - network_weight * node_info.network_usage;
     return combined_score;
 }

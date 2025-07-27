@@ -9,7 +9,19 @@
 #include "redis_client.h"
 #include<queue>
 #include<condition_variable>
-#include"scheduler_config.h"
+#include<scheduler_config.h>
+#include<unordered_map>
+#include<mutex>
+
+// 系统信息结构
+struct SystemInfo {
+    double cpu_usage = 0.0;
+    double memory_usage = 0.0;
+    double disk_usage = 0.0;
+    double network_speed = 0.0;  // 网络速度，单位Mbps
+    std::string timestamp;
+};
+
 //调度器
 class scheduler{
 
@@ -44,6 +56,13 @@ public:
     //上报不健康心跳
     void report_unhealthy_heartbeat_to_zk();
 
+    //系统信息维护线程
+    void system_info_maintenance_thread_function();
+
+    //获取系统信息
+    SystemInfo get_system_info() const;
+    //更新系统信息
+    void update_system_info();
 private:
     //运行状态
     std::atomic<bool> running_;
@@ -78,6 +97,13 @@ private:
     //上报心跳线程
     std::thread report_heartbeat_thread_;
 
-    
+    //系统信息维护线程
+    std::thread system_info_maintenance_thread_;
+
+    //系统信息存储
+    mutable std::mutex system_info_mutex_;
+    SystemInfo current_system_info_;
+
+
 
 };
