@@ -6,6 +6,7 @@
 #include <thread>
 #include<json/json.h>
 #include"client_config.h"
+
 ClientConfig* config = ClientConfig::GetInstance("../config/client_config.json");
 //zk配置
 const std::string ZK_HOST = config->get_zk_host();
@@ -14,6 +15,11 @@ const std::string ZK_PATH = config->get_zk_path();
 const std::string REDIS_HOST = config->get_redis_host();
 const int REDIS_PORT = config->get_redis_port();
 const std::string REDIS_PASSWORD = config->get_redis_password();
+//更新间隔
+const int UPDATE_INTERVAL = config->get_update_interval();
+//负载均衡配置
+const int LOAD_BALANCE_TYPE = config->get_load_balance_type();
+
 
 //构造函数
 Client::Client():running_(false){
@@ -40,6 +46,36 @@ void Client::init(){
     {
         throw std::runtime_error("redis client connect erron!!!");
     }
+
+    //初始化负载均衡方式
+    switch(LOAD_BALANCE_TYPE)
+    {
+        case 0:
+            load_balance_type_ = LoadBalanceType::ROUND_ROBIN;
+            break;
+        case 1:
+            load_balance_type_ = LoadBalanceType::CPU_PRIORITY;
+            break;
+        case 2:
+            load_balance_type_ = LoadBalanceType::MEMORY_PRIORITY;
+            break;
+        case 3: 
+            load_balance_type_ = LoadBalanceType::DISK_PRIORITY;
+            break;
+        case 4:
+            load_balance_type_ = LoadBalanceType::NETWORK_PRIORITY;
+            break;
+        case 5:
+            load_balance_type_ = LoadBalanceType::COMBINED_LOAD_BALANCE;
+            break;
+        default:
+            load_balance_type_ = LoadBalanceType::ROUND_ROBIN;
+            std::cout << "[Client] 负载均衡方式初始化失败,使用默认轮询方式" << std::endl;
+    }
+    //初始化负载均衡权重
+    load_balance_weight_ = config->get_load_balance_weight();
+    //初始化轮询下标
+    round_robin_index_ = 0;
 }
 //启动函数
 void Client::start()
@@ -161,41 +197,54 @@ void Client::consume_task_resultfunction()
 
     while(running_)
     {
-        //遍历已提交任务id
-        std::cout << "[Client] 当前待查询任务数量: " << distribution_taskid_.size() << std::endl;
-        for(auto& taskid : distribution_taskid_)
+        std::vector<std::string> completed_tasks; // 记录已完成的任务
         {
-            std::cout << "[Client] 查询任务结果: " << taskid << std::endl;
-            //从redis 查询任务结果
-            std::string result = redis_client_->getTaskResult(taskid);
-            if(result != "NO_RESULT")
+            std::lock_guard<std::mutex> lock_distribution_taskid(distribution_taskid_mutex_);
+            std::cout << "[Client] 当前待查询任务数量: " << distribution_taskid_.size() << std::endl;
+            
+            for(auto& taskid : distribution_taskid_)
             {
-                std::cout << "[Client] 找到任务结果: " << taskid << std::endl;
-                //查到结果删除
-                redis_client_->deleteTaskResult(taskid);
-                //反序列化任务结果
-                taskscheduler::TaskResult taskresult;
-                if(taskresult.ParseFromString(result)) {
-                    std::cout << "[Client] 任务结果反序列化成功: " << taskid << ", 状态: " << taskresult.status() << std::endl;
-                    {
-                        //添加到任务结果队列
-                        std::lock_guard<std::mutex> lock_taskresult(taskresult_mutex_);
-                        taskresult_[taskid] = taskresult;
+                std::cout << "[Client] 查询任务结果: " << taskid << std::endl;
+                //从redis 查询任务结果
+                std::string result = redis_client_->getTaskResult(taskid);
+                if(result != "NO_RESULT")
+                {
+                    std::cout << "[Client] 找到任务结果: " << taskid << std::endl;
+                    //查到结果删除
+                    redis_client_->deleteTaskResult(taskid);
+                    //反序列化任务结果
+                    taskscheduler::TaskResult taskresult;
+                    if(taskresult.ParseFromString(result)) {
+                        {
+                            //添加到任务结果队列
+                            std::lock_guard<std::mutex> lock_taskresult(taskresult_mutex_);
+                            taskresult_[taskid] = taskresult;
+                        }
+                        //记录已完成的任务
+                        completed_tasks.push_back(taskid);
+                        //通知获取结果线程有任务结果
+                        submit_task_queue_no_empty_.notify_one();
+                        
+                    } 
+                    else {
+                        std::cerr << "[Client] 任务结果反序列化失败: " << taskid << std::endl;
                     }
-
-                    //从已提交任务id队列中移除
-                    distribution_taskid_.erase(std::remove(distribution_taskid_.begin(),distribution_taskid_.end(),taskid),distribution_taskid_.end());
-                    //通知获取结果线程有任务结果
-                    submit_task_queue_no_empty_.notify_one();
-                } else {
-                    std::cerr << "[Client] 任务结果反序列化失败: " << taskid << std::endl;
+                }
+                else
+                {
+                    std::cout << "[Client] 未找到任务结果: " << taskid << std::endl;
                 }
             }
-            else
-            {
-                std::cout << "[Client] 未找到任务结果: " << taskid << std::endl;
+        }
+        
+        //在锁外删除已完成的任务
+        if(!completed_tasks.empty()) {
+            std::lock_guard<std::mutex> lock_distribution_taskid(distribution_taskid_mutex_);
+            for(auto& taskid : completed_tasks) {
+                distribution_taskid_.erase(std::remove(distribution_taskid_.begin(),distribution_taskid_.end(),taskid),distribution_taskid_.end());
             }
         }
+        
         //等待1000ms 避免频繁查询redis
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
@@ -214,9 +263,6 @@ void Client::updata_secheduler_node_table_threadfunction()
         std::cout<<"准备获取zk 节点路径"<<std::endl;
         for(auto& scheduler_node_path : zk_client_->getAllNode(ZK_PATH))
         {
-            //debug
-
-            std::cout<<scheduler_node_path<<std::endl;
             //获取当前调度器节点的信息
             taskscheduler::SchedulerHeartbeat scheduler_heartbeat;
 
@@ -226,28 +272,47 @@ void Client::updata_secheduler_node_table_threadfunction()
             std::string scheduler_id = scheduler_heartbeat.scheduler_id();
 
             //筛选出客户端想知道的调度器信息
-            SchedulerNodeInfo scheduler_host;
-            scheduler_host.ip = scheduler_heartbeat.scheduler_ip();
-            scheduler_host.port = scheduler_heartbeat.scheduler_port();
-            scheduler_host.undata_flag = true;
+            SchedulerNodeInfo scheduler_host_info;
+            scheduler_host_info.ip = scheduler_heartbeat.scheduler_ip();
+            scheduler_host_info.port = scheduler_heartbeat.scheduler_port();
+            scheduler_host_info.undata_flag = true;
 
             //将能力描述添加到调度器节点信息
             for(auto& item : scheduler_heartbeat.dec())
             {       
-                scheduler_host.descriptor[item.first] = item.second;
+                if(item.first == "cpu_usage")
+                {
+                    scheduler_host_info.cpu_usage = std::stod(item.second);
+                }
+                else if(item.first == "memory_usage")
+                {
+                    scheduler_host_info.memory_usage = std::stod(item.second);
+                }
+                else if(item.first == "disk_usage")
+                {
+                    scheduler_host_info.disk_usage = std::stod(item.second);
+                }
+                else if(item.first == "network_usage")
+                {
+                    scheduler_host_info.network_usage = std::stod(item.second);
+                }
+                else
+                {
+                    std::cerr << "[Client] 未知调度器节点信息: " << item.first << std::endl;
+                }
             }    
             //将当前的调度器节点信息缓存到本地
             {    
                 std::lock_guard<std::mutex> lock_hearly_secheduler_node_table(hearly_secheduler_node_table_mutex_);
-                hearly_secheduler_node_table_[scheduler_id] = scheduler_host;
+                hearly_secheduler_node_table_[scheduler_id] = scheduler_host_info;
             }
         }
         if(!running_)
         {
             break;
         }
-        //等待1000ms 再进行下一次更新
-        std::this_thread::sleep_for(std::chrono::seconds(10));
+        //等待更新间隔 再进行下一次更新
+        std::this_thread::sleep_for(std::chrono::milliseconds(UPDATE_INTERVAL));
         { //每一次更新前调取表前，删除无效调取器及节点，重置所有有效调度器更新标识
             std::lock_guard<std::mutex> lock_hearly_secheduler_node_table(hearly_secheduler_node_table_mutex_);
             //遍历本地缓存的调度节点表 设置更新标识 为false
@@ -272,15 +337,32 @@ void Client::updata_secheduler_node_table_threadfunction()
 std::pair<std::string,int> Client::get_hearly_secheduler_node()
 {
     //获取健康调度器表
-    std::lock_guard<std::mutex> lock_hearly_secheduler_node_table(hearly_secheduler_node_table_mutex_);
-    if(hearly_secheduler_node_table_.empty())
     {
-        throw std::runtime_error("no healthy scheduler node!!!!");
+        std::lock_guard<std::mutex> lock_hearly_secheduler_node_table(hearly_secheduler_node_table_mutex_);
+        if(hearly_secheduler_node_table_.empty())
+        {
+            throw std::runtime_error("no healthy scheduler node!!!!");
+        }
     }
-    //返回一个健康调度器节点 -- 返回ip和port
-    //取出这个节点
-    auto it = hearly_secheduler_node_table_.begin()->second;
-    return {it.ip,it.port};
+    
+    //根据调度器节点负载均衡方式 返回一个健康调度器节点 -- 返回ip和port
+    switch(load_balance_type_)
+    {
+        case LoadBalanceType::ROUND_ROBIN:
+            return round_robin_load_balance();
+        case LoadBalanceType::CPU_PRIORITY:
+            return cpu_priority_load_balance();
+        case LoadBalanceType::MEMORY_PRIORITY:
+            return memory_priority_load_balance();
+        case LoadBalanceType::DISK_PRIORITY:
+            return disk_priority_load_balance();
+        case LoadBalanceType::NETWORK_PRIORITY:
+            return network_priority_load_balance();
+        case LoadBalanceType::COMBINED_LOAD_BALANCE:
+            return combined_load_balance();
+        default:
+            throw std::runtime_error("unknown load balance type!!!!");
+    }
 }
 ///////////////外部接口//////////////////
 //提交一个任务
@@ -305,6 +387,12 @@ void Client::submit_more_task(std::vector<taskscheduler::Task> taskarray)
     submit_task_queue_no_empty_.notify_all();
 }
 
+//提交一个定时任务
+void Client::sunmit_one_timeout(taskscheduler::Task task,int timeout)
+{
+    //暂时不实现
+
+}
 //通过socket 提交任务到调度器
 void Client::socket_submit_task_to_scheduler(taskscheduler::Task& task,std::pair<std::string,int>& scheduer_host)
 {
@@ -388,4 +476,117 @@ std::vector<taskscheduler::TaskResult> Client::get_all_task_result_and_delete() 
     }
     taskresult_.clear();
     return taskresult_vector;   
+}
+
+//轮询负载均衡
+std::pair<std::string,int> Client::round_robin_load_balance()
+{
+    //获取健康调度器表
+
+    std::lock_guard<std::mutex> lock_hearly_secheduler_node_table(hearly_secheduler_node_table_mutex_);
+    if(hearly_secheduler_node_table_.empty())
+    {
+        throw std::runtime_error("no healthy scheduler node!!!!");
+    }
+
+    //轮询下标++
+    round_robin_index_ = (round_robin_index_ + 1) % hearly_secheduler_node_table_.size();
+    //获取轮询下标对应的调度器节点
+    auto it = hearly_secheduler_node_table_.begin();
+    std::advance(it,round_robin_index_);
+    return {it->second.ip,it->second.port};
+
+}
+//CPU 优先负载均衡
+std::pair<std::string,int> Client::cpu_priority_load_balance()
+{
+    //获取健康调度器表
+    std::lock_guard<std::mutex> lock_hearly_secheduler_node_table(hearly_secheduler_node_table_mutex_);
+    if(hearly_secheduler_node_table_.empty())
+    {
+        throw std::runtime_error("no healthy scheduler node!!!!");
+    }
+    //获取CPU 使用率最高的调度器节点
+    auto max_cpu_usage_node = std::max_element(hearly_secheduler_node_table_.begin(),hearly_secheduler_node_table_.end(),[](const auto& a,const auto& b){
+        //比较CPU 使用率 返回使用率最高的调度器节点
+        return a.second.cpu_usage < b.second.cpu_usage;
+    });
+    return {max_cpu_usage_node->second.ip,max_cpu_usage_node->second.port};
+}
+//内存优先负载均衡
+std::pair<std::string,int> Client::memory_priority_load_balance()
+{
+    //获取健康调度器表
+    std::lock_guard<std::mutex> lock_hearly_secheduler_node_table(hearly_secheduler_node_table_mutex_);
+    if(hearly_secheduler_node_table_.empty())
+    {
+        throw std::runtime_error("no healthy scheduler node!!!!");
+    }
+    //获取内存使用率最高的调度器节点
+    auto max_memory_usage_node = std::max_element(hearly_secheduler_node_table_.begin(),hearly_secheduler_node_table_.end(),[](const auto& a,const auto& b){
+        //比较内存使用率 返回使用率最高的调度器节点
+        return a.second.memory_usage < b.second.memory_usage;
+    });
+    return {max_memory_usage_node->second.ip,max_memory_usage_node->second.port};
+}
+//磁盘优先负载均衡
+std::pair<std::string,int> Client::disk_priority_load_balance()
+{
+    //获取健康调度器表
+    std::lock_guard<std::mutex> lock_hearly_secheduler_node_table(hearly_secheduler_node_table_mutex_);
+    if(hearly_secheduler_node_table_.empty())
+    {
+        throw std::runtime_error("no healthy scheduler node!!!!");
+    }
+    //获取磁盘使用率最高的调度器节点
+    auto max_disk_usage_node = std::max_element(hearly_secheduler_node_table_.begin(),hearly_secheduler_node_table_.end(),[](const auto& a,const auto& b){
+        //比较磁盘使用率 返回使用率最高的调度器节点
+        return a.second.disk_usage < b.second.disk_usage;
+    });
+    return {max_disk_usage_node->second.ip,max_disk_usage_node->second.port};
+}
+//网速优先负载均衡
+std::pair<std::string,int> Client::network_priority_load_balance()
+{
+    //获取健康调度器表
+    std::lock_guard<std::mutex> lock_hearly_secheduler_node_table(hearly_secheduler_node_table_mutex_);
+    if(hearly_secheduler_node_table_.empty())
+    {
+        throw std::runtime_error("no healthy scheduler node!!!!");
+    }   
+    //获取网速使用率最高的调度器节点
+    auto max_network_usage_node = std::max_element(hearly_secheduler_node_table_.begin(),hearly_secheduler_node_table_.end(),[](const auto& a,const auto& b){
+        //比较网速使用率 返回使用率最高的调度器节点
+        return a.second.network_usage < b.second.network_usage;
+    });
+    return {max_network_usage_node->second.ip,max_network_usage_node->second.port};
+}
+//综合负载均衡
+std::pair<std::string,int> Client::combined_load_balance()
+{
+    //获取健康调度器表
+    std::lock_guard<std::mutex> lock_hearly_secheduler_node_table(hearly_secheduler_node_table_mutex_);
+    if(hearly_secheduler_node_table_.empty())
+    {
+        throw std::runtime_error("no healthy scheduler node!!!!");
+    }
+    //获取综合得分最高的调度器节点
+    auto max_combined_score_node = std::max_element(hearly_secheduler_node_table_.begin(),hearly_secheduler_node_table_.end(),[this](const auto& a,const auto& b){  
+        //比较综合得分 返回得分最高的调度器节点
+        return get_combined_score(a.second) < get_combined_score(b.second);
+    });
+    return {max_combined_score_node->second.ip,max_combined_score_node->second.port};
+}
+//根据权重获取综合得分
+double Client::get_combined_score(const SchedulerNodeInfo& node_info)
+{
+    //获取权重
+    double cpu_weight = load_balance_weight_["cpu_usage"];
+    double memory_weight = load_balance_weight_["memory_usage"];
+    double disk_weight = load_balance_weight_["disk_usage"];
+    double network_weight = load_balance_weight_["network_usage"];
+    //计算综合得分
+    double combined_score = cpu_weight * node_info.cpu_usage + memory_weight * node_info.memory_usage + 
+                            disk_weight * node_info.disk_usage + network_weight * node_info.network_usage;
+    return combined_score;
 }

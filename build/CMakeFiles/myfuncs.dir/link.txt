@@ -1,1 +1,1 @@
-/usr/bin/c++ -fPIC -g -shared -Wl,-soname,libmyfuncs.so -o libmyfuncs.so CMakeFiles/myfuncs.dir/src/function_lib.cpp.o  -ljsoncpp -lpthread -ldl 
+/usr/bin/aarch64-linux-gnu-g++ -fPIC -g -shared -Wl,-soname,libmyfuncs.so -o libmyfuncs.so CMakeFiles/myfuncs.dir/src/function_lib.cpp.o  -ljsoncpp -lpthread -ldl 

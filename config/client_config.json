@@ -8,5 +8,14 @@
         "port": 6379,
         "password": ""
     },
-    "update_interval": 1000
+
+    "update_interval": 1000,
+
+    "load_balance_type": 0, 
+    "load_balance_weight":{
+        "cpu_usage_weight": 0.3,
+        "memory_usage_weight": 0.3,
+        "disk_usage_weight": 0.2,
+        "network_usage_weight": 0.2
+    }
 }

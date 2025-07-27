@@ -9,14 +9,37 @@
 #include<atomic>
 #include<queue>
 #include<condition_variable>
+#include<algorithm>
 #include "redis_client.h"
 #include "task.pb.h"
 #include "zk_client.h"
 
+
 using namespace taskscheduler;
 
+enum class LoadBalanceType{
+    ROUND_ROBIN, //轮询
+    CPU_PRIORITY, //CPU 优先
+    MEMORY_PRIORITY, //内存优先
+    DISK_PRIORITY, //磁盘优先
+    NETWORK_PRIORITY, //网速优先
+    COMBINED_LOAD_BALANCE,//综合负载均衡
+};
 
+struct SchedulerNodeInfo{
+    std::string ip;
+    int port;
+    bool undata_flag;  //只用于定时更新健康调度器表 删除标志位
 
+    //CPU 使用率
+    double cpu_usage;
+    //内存使用率
+    double memory_usage;
+    //磁盘使用率
+    double disk_usage;
+    //网速使用率
+    double network_usage;
+};
 
 class Client {
 public:
@@ -45,23 +68,33 @@ public:
         维护所有调度器节点，定时更新  线程
     */
     void updata_secheduler_node_table_threadfunction();
-    /*
-        enum 负载均衡方式
-        {
-            轮询
-            cpu 优先
-            内存优先
-            磁盘优先
-            网速优先
-            综合优先（实现方式，可以给没一项描述加一个权重，根据权重排）
-        }
-    */
+
     //从健康调度器表取出一个健康的调度器节点 -----后续负载均衡的引入位置
     std::pair<std::string,int> get_hearly_secheduler_node();
 
     //通过socket 提交任务到调度器
     void socket_submit_task_to_scheduler(taskscheduler::Task& task,std::pair<std::string,int>& scheduer_host);
 
+    //轮询负载均衡
+    std::pair<std::string,int> round_robin_load_balance();
+
+    //CPU 优先负载均衡
+    std::pair<std::string,int> cpu_priority_load_balance();
+
+    //内存优先负载均衡
+    std::pair<std::string,int> memory_priority_load_balance();
+
+    //磁盘优先负载均衡
+    std::pair<std::string,int> disk_priority_load_balance();
+
+    //网速优先负载均衡
+    std::pair<std::string,int> network_priority_load_balance();
+
+    //综合负载均衡
+    std::pair<std::string,int> combined_load_balance();
+    
+    //根据权重获取综合得分
+    double get_combined_score(const SchedulerNodeInfo& node_info);
 
 
     ///////外部接口/////////
@@ -70,7 +103,7 @@ public:
     //提交一组任务
     void submit_more_task(std::vector<taskscheduler::Task> taskarray);
     //提交一个定时任务
-    void sunmit_one_timeout(taskscheduler::Task task);
+    void sunmit_one_timeout(taskscheduler::Task task,int timeout);
 
     //根据一个taskid 来查询一个任务结果
     taskscheduler::TaskResult get_task_result(std::string taskid)const;
@@ -108,13 +141,6 @@ private:
     //缓存任务执行成功的任务结果
     std::unordered_map<std::string,taskscheduler::TaskResult> taskresult_;
     std::mutex taskresult_mutex_;
-    
-    struct SchedulerNodeInfo{
-        std::string ip;
-        int port;
-        std::unordered_map<std::string,std::string> descriptor;
-        bool undata_flag;
-    };
     //缓存所有健康的调度器节点
     std::unordered_map<std::string,SchedulerNodeInfo> hearly_secheduler_node_table_;
     std::mutex hearly_secheduler_node_table_mutex_;
@@ -126,6 +152,17 @@ private:
     //定时更新健康调度器表
     std::thread updata_secheduler_node_table_thread_;
     //处理失败执行任务线程-- 暂不实现
+
+    
+
+    //负载均衡方式
+    LoadBalanceType load_balance_type_;
+    //负载均衡权重
+    std::unordered_map<std::string,double> load_balance_weight_;
+    //轮询下标
+    int round_robin_index_;
+
+
 
 
     

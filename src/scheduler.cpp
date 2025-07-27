@@ -326,7 +326,7 @@ void scheduler::get_task_result_thread_function()
 {
     try
     {
-        scheduler_task_result_queue_->consumeResult([this](taskscheduler::TaskResult &result){
+            scheduler_task_result_queue_->consumeResult([this](taskscheduler::TaskResult &result){
             std::cout << "[Scheduler] 收到结果: " << result.task_id() << ", 状态: " << result.status() << std::endl;
             if(rediscli_->setTaskResult(result.task_id(), result, 3600)) {
                 std::cout << "[Scheduler] 任务结果存储到Redis成功: " << result.task_id() << std::endl;

@@ -73,15 +73,15 @@ CMakeFiles/myfuncs.dir/src/function_lib.cpp.o: CMakeFiles/myfuncs.dir/flags.make
 CMakeFiles/myfuncs.dir/src/function_lib.cpp.o: /home/admin_xhy/TaskHive/src/function_lib.cpp
 CMakeFiles/myfuncs.dir/src/function_lib.cpp.o: CMakeFiles/myfuncs.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/admin_xhy/TaskHive/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/myfuncs.dir/src/function_lib.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/myfuncs.dir/src/function_lib.cpp.o -MF CMakeFiles/myfuncs.dir/src/function_lib.cpp.o.d -o CMakeFiles/myfuncs.dir/src/function_lib.cpp.o -c /home/admin_xhy/TaskHive/src/function_lib.cpp
+	/usr/bin/aarch64-linux-gnu-g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/myfuncs.dir/src/function_lib.cpp.o -MF CMakeFiles/myfuncs.dir/src/function_lib.cpp.o.d -o CMakeFiles/myfuncs.dir/src/function_lib.cpp.o -c /home/admin_xhy/TaskHive/src/function_lib.cpp
 
 CMakeFiles/myfuncs.dir/src/function_lib.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/myfuncs.dir/src/function_lib.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/admin_xhy/TaskHive/src/function_lib.cpp > CMakeFiles/myfuncs.dir/src/function_lib.cpp.i
+	/usr/bin/aarch64-linux-gnu-g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/admin_xhy/TaskHive/src/function_lib.cpp > CMakeFiles/myfuncs.dir/src/function_lib.cpp.i
 
 CMakeFiles/myfuncs.dir/src/function_lib.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/myfuncs.dir/src/function_lib.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/admin_xhy/TaskHive/src/function_lib.cpp -o CMakeFiles/myfuncs.dir/src/function_lib.cpp.s
+	/usr/bin/aarch64-linux-gnu-g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/admin_xhy/TaskHive/src/function_lib.cpp -o CMakeFiles/myfuncs.dir/src/function_lib.cpp.s
 
 # Object files for target myfuncs
 myfuncs_OBJECTS = \
