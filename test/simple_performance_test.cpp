@@ -35,9 +35,7 @@ private:
         task.set_type(taskscheduler::COMMAND);  // 使用命令类型
         task.set_content("echo 'Hello from performance test'");  // 简单的echo命令
         
-        // 设置任务参数
-        task.mutable_metadata()->insert({"timeout", "10"});
-        task.mutable_metadata()->insert({"priority", "1"});
+
         
         return task;
     }
