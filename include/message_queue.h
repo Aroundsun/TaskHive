@@ -554,6 +554,8 @@ public:
     bool consumeTaskImpl(TaskCallback cb) { throw std::runtime_error("Not implemented"); }
 
 };
+
+
 class MySchedulerResultQueue : public ResultQueue<MySchedulerResultQueue>
 {
 public:

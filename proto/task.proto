@@ -24,7 +24,15 @@ message Task {
     string content = 3;           // 任务内容（命令或函数名）
     string worker_id = 4;         // 执行器ID
     TaskStatus status = 5;       // 任务状态
-    map<string, string> metadata = 6; // 任务的参数信息  命令行——> parm1:-r  函数-> 类型：值
+    
+    map<string, string> metadata = 6; // 任务的参数信息  命令行——> parm1:-r 函数-> 类型：值
+
+
+    int64 start_sched_time = 7;    //到达调度器的时间戳
+    int64 end_sched_time = 8;    //离开调度器的时间戳
+    int64 start_worker_time = 9;    //到达工作器的时间戳
+
+    //任务执行失败的
 }
 
 // 执行结果结构
@@ -33,11 +41,14 @@ message TaskResult {
     TaskStatus status = 2;        // 执行状态
     string output = 3;            // 执行输出
     string error_message = 4;     // 错误信息
-    int64 start_time = 5;         // 开始时间戳
-    int64 end_time = 6;           // 结束时间戳
-    int64 duration_ms = 7;        // 执行时长（毫秒）
-    string worker_id = 8;         // 执行器ID
+    int64 start_sched_time = 5;         // 这个任务到达调度器的时间戳
+    int64 end_sched_time = 6;           // 这个任务离开调度器的时间戳
+    int64 start_worker_time = 7;//这个任务到达工作器的时间戳
 
+    int64 start_exc_time = 8;        //这个任务开始执行的时间戳
+    int64 end_worker_time = 9;    //离开调度器的时间
+    int64 duration_ms = 10;        // 执行时长（毫秒）
+    string worker_id = 11;         // 执行器ID
 }
 
 // 心跳消息

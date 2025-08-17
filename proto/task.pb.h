@@ -294,6 +294,9 @@ class Task final :
     kWorkerIdFieldNumber = 4,
     kTypeFieldNumber = 2,
     kStatusFieldNumber = 5,
+    kStartSchedTimeFieldNumber = 7,
+    kEndSchedTimeFieldNumber = 8,
+    kStartWorkerTimeFieldNumber = 9,
   };
   // map<string, string> metadata = 6;
   int metadata_size() const;
@@ -372,6 +375,33 @@ class Task final :
   void _internal_set_status(::taskscheduler::TaskStatus value);
   public:
 
+  // int64 start_sched_time = 7;
+  void clear_start_sched_time();
+  int64_t start_sched_time() const;
+  void set_start_sched_time(int64_t value);
+  private:
+  int64_t _internal_start_sched_time() const;
+  void _internal_set_start_sched_time(int64_t value);
+  public:
+
+  // int64 end_sched_time = 8;
+  void clear_end_sched_time();
+  int64_t end_sched_time() const;
+  void set_end_sched_time(int64_t value);
+  private:
+  int64_t _internal_end_sched_time() const;
+  void _internal_set_end_sched_time(int64_t value);
+  public:
+
+  // int64 start_worker_time = 9;
+  void clear_start_worker_time();
+  int64_t start_worker_time() const;
+  void set_start_worker_time(int64_t value);
+  private:
+  int64_t _internal_start_worker_time() const;
+  void _internal_set_start_worker_time(int64_t value);
+  public:
+
   // @@protoc_insertion_point(class_scope:taskscheduler.Task)
  private:
   class _Internal;
@@ -390,6 +420,9 @@ class Task final :
     ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr worker_id_;
     int type_;
     int status_;
+    int64_t start_sched_time_;
+    int64_t end_sched_time_;
+    int64_t start_worker_time_;
     mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   };
   union { Impl_ _impl_; };
@@ -521,10 +554,13 @@ class TaskResult final :
     kTaskIdFieldNumber = 1,
     kOutputFieldNumber = 3,
     kErrorMessageFieldNumber = 4,
-    kWorkerIdFieldNumber = 8,
-    kStartTimeFieldNumber = 5,
-    kEndTimeFieldNumber = 6,
-    kDurationMsFieldNumber = 7,
+    kWorkerIdFieldNumber = 11,
+    kStartSchedTimeFieldNumber = 5,
+    kEndSchedTimeFieldNumber = 6,
+    kStartWorkerTimeFieldNumber = 7,
+    kStartExcTimeFieldNumber = 8,
+    kEndWorkerTimeFieldNumber = 9,
+    kDurationMsFieldNumber = 10,
     kStatusFieldNumber = 2,
   };
   // string task_id = 1;
@@ -569,7 +605,7 @@ class TaskResult final :
   std::string* _internal_mutable_error_message();
   public:
 
-  // string worker_id = 8;
+  // string worker_id = 11;
   void clear_worker_id();
   const std::string& worker_id() const;
   template <typename ArgT0 = const std::string&, typename... ArgT>
@@ -583,25 +619,52 @@ class TaskResult final :
   std::string* _internal_mutable_worker_id();
   public:
 
-  // int64 start_time = 5;
-  void clear_start_time();
-  int64_t start_time() const;
-  void set_start_time(int64_t value);
+  // int64 start_sched_time = 5;
+  void clear_start_sched_time();
+  int64_t start_sched_time() const;
+  void set_start_sched_time(int64_t value);
   private:
-  int64_t _internal_start_time() const;
-  void _internal_set_start_time(int64_t value);
+  int64_t _internal_start_sched_time() const;
+  void _internal_set_start_sched_time(int64_t value);
   public:
 
-  // int64 end_time = 6;
-  void clear_end_time();
-  int64_t end_time() const;
-  void set_end_time(int64_t value);
+  // int64 end_sched_time = 6;
+  void clear_end_sched_time();
+  int64_t end_sched_time() const;
+  void set_end_sched_time(int64_t value);
   private:
-  int64_t _internal_end_time() const;
-  void _internal_set_end_time(int64_t value);
+  int64_t _internal_end_sched_time() const;
+  void _internal_set_end_sched_time(int64_t value);
   public:
 
-  // int64 duration_ms = 7;
+  // int64 start_worker_time = 7;
+  void clear_start_worker_time();
+  int64_t start_worker_time() const;
+  void set_start_worker_time(int64_t value);
+  private:
+  int64_t _internal_start_worker_time() const;
+  void _internal_set_start_worker_time(int64_t value);
+  public:
+
+  // int64 start_exc_time = 8;
+  void clear_start_exc_time();
+  int64_t start_exc_time() const;
+  void set_start_exc_time(int64_t value);
+  private:
+  int64_t _internal_start_exc_time() const;
+  void _internal_set_start_exc_time(int64_t value);
+  public:
+
+  // int64 end_worker_time = 9;
+  void clear_end_worker_time();
+  int64_t end_worker_time() const;
+  void set_end_worker_time(int64_t value);
+  private:
+  int64_t _internal_end_worker_time() const;
+  void _internal_set_end_worker_time(int64_t value);
+  public:
+
+  // int64 duration_ms = 10;
   void clear_duration_ms();
   int64_t duration_ms() const;
   void set_duration_ms(int64_t value);
@@ -631,8 +694,11 @@ class TaskResult final :
     ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr output_;
     ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr error_message_;
     ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr worker_id_;
-    int64_t start_time_;
-    int64_t end_time_;
+    int64_t start_sched_time_;
+    int64_t end_sched_time_;
+    int64_t start_worker_time_;
+    int64_t start_exc_time_;
+    int64_t end_worker_time_;
     int64_t duration_ms_;
     int status_;
     mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
@@ -1384,6 +1450,66 @@ Task::mutable_metadata() {
   return _internal_mutable_metadata();
 }
 
+// int64 start_sched_time = 7;
+inline void Task::clear_start_sched_time() {
+  _impl_.start_sched_time_ = int64_t{0};
+}
+inline int64_t Task::_internal_start_sched_time() const {
+  return _impl_.start_sched_time_;
+}
+inline int64_t Task::start_sched_time() const {
+  // @@protoc_insertion_point(field_get:taskscheduler.Task.start_sched_time)
+  return _internal_start_sched_time();
+}
+inline void Task::_internal_set_start_sched_time(int64_t value) {
+  
+  _impl_.start_sched_time_ = value;
+}
+inline void Task::set_start_sched_time(int64_t value) {
+  _internal_set_start_sched_time(value);
+  // @@protoc_insertion_point(field_set:taskscheduler.Task.start_sched_time)
+}
+
+// int64 end_sched_time = 8;
+inline void Task::clear_end_sched_time() {
+  _impl_.end_sched_time_ = int64_t{0};
+}
+inline int64_t Task::_internal_end_sched_time() const {
+  return _impl_.end_sched_time_;
+}
+inline int64_t Task::end_sched_time() const {
+  // @@protoc_insertion_point(field_get:taskscheduler.Task.end_sched_time)
+  return _internal_end_sched_time();
+}
+inline void Task::_internal_set_end_sched_time(int64_t value) {
+  
+  _impl_.end_sched_time_ = value;
+}
+inline void Task::set_end_sched_time(int64_t value) {
+  _internal_set_end_sched_time(value);
+  // @@protoc_insertion_point(field_set:taskscheduler.Task.end_sched_time)
+}
+
+// int64 start_worker_time = 9;
+inline void Task::clear_start_worker_time() {
+  _impl_.start_worker_time_ = int64_t{0};
+}
+inline int64_t Task::_internal_start_worker_time() const {
+  return _impl_.start_worker_time_;
+}
+inline int64_t Task::start_worker_time() const {
+  // @@protoc_insertion_point(field_get:taskscheduler.Task.start_worker_time)
+  return _internal_start_worker_time();
+}
+inline void Task::_internal_set_start_worker_time(int64_t value) {
+  
+  _impl_.start_worker_time_ = value;
+}
+inline void Task::set_start_worker_time(int64_t value) {
+  _internal_set_start_worker_time(value);
+  // @@protoc_insertion_point(field_set:taskscheduler.Task.start_worker_time)
+}
+
 // -------------------------------------------------------------------
 
 // TaskResult
@@ -1558,47 +1684,107 @@ inline void TaskResult::set_allocated_error_message(std::string* error_message) 
   // @@protoc_insertion_point(field_set_allocated:taskscheduler.TaskResult.error_message)
 }
 
-// int64 start_time = 5;
-inline void TaskResult::clear_start_time() {
-  _impl_.start_time_ = int64_t{0};
+// int64 start_sched_time = 5;
+inline void TaskResult::clear_start_sched_time() {
+  _impl_.start_sched_time_ = int64_t{0};
 }
-inline int64_t TaskResult::_internal_start_time() const {
-  return _impl_.start_time_;
+inline int64_t TaskResult::_internal_start_sched_time() const {
+  return _impl_.start_sched_time_;
 }
-inline int64_t TaskResult::start_time() const {
-  // @@protoc_insertion_point(field_get:taskscheduler.TaskResult.start_time)
-  return _internal_start_time();
+inline int64_t TaskResult::start_sched_time() const {
+  // @@protoc_insertion_point(field_get:taskscheduler.TaskResult.start_sched_time)
+  return _internal_start_sched_time();
 }
-inline void TaskResult::_internal_set_start_time(int64_t value) {
+inline void TaskResult::_internal_set_start_sched_time(int64_t value) {
   
-  _impl_.start_time_ = value;
+  _impl_.start_sched_time_ = value;
 }
-inline void TaskResult::set_start_time(int64_t value) {
-  _internal_set_start_time(value);
-  // @@protoc_insertion_point(field_set:taskscheduler.TaskResult.start_time)
+inline void TaskResult::set_start_sched_time(int64_t value) {
+  _internal_set_start_sched_time(value);
+  // @@protoc_insertion_point(field_set:taskscheduler.TaskResult.start_sched_time)
 }
 
-// int64 end_time = 6;
-inline void TaskResult::clear_end_time() {
-  _impl_.end_time_ = int64_t{0};
+// int64 end_sched_time = 6;
+inline void TaskResult::clear_end_sched_time() {
+  _impl_.end_sched_time_ = int64_t{0};
 }
-inline int64_t TaskResult::_internal_end_time() const {
-  return _impl_.end_time_;
+inline int64_t TaskResult::_internal_end_sched_time() const {
+  return _impl_.end_sched_time_;
 }
-inline int64_t TaskResult::end_time() const {
-  // @@protoc_insertion_point(field_get:taskscheduler.TaskResult.end_time)
-  return _internal_end_time();
+inline int64_t TaskResult::end_sched_time() const {
+  // @@protoc_insertion_point(field_get:taskscheduler.TaskResult.end_sched_time)
+  return _internal_end_sched_time();
 }
-inline void TaskResult::_internal_set_end_time(int64_t value) {
+inline void TaskResult::_internal_set_end_sched_time(int64_t value) {
   
-  _impl_.end_time_ = value;
+  _impl_.end_sched_time_ = value;
 }
-inline void TaskResult::set_end_time(int64_t value) {
-  _internal_set_end_time(value);
-  // @@protoc_insertion_point(field_set:taskscheduler.TaskResult.end_time)
+inline void TaskResult::set_end_sched_time(int64_t value) {
+  _internal_set_end_sched_time(value);
+  // @@protoc_insertion_point(field_set:taskscheduler.TaskResult.end_sched_time)
 }
 
-// int64 duration_ms = 7;
+// int64 start_worker_time = 7;
+inline void TaskResult::clear_start_worker_time() {
+  _impl_.start_worker_time_ = int64_t{0};
+}
+inline int64_t TaskResult::_internal_start_worker_time() const {
+  return _impl_.start_worker_time_;
+}
+inline int64_t TaskResult::start_worker_time() const {
+  // @@protoc_insertion_point(field_get:taskscheduler.TaskResult.start_worker_time)
+  return _internal_start_worker_time();
+}
+inline void TaskResult::_internal_set_start_worker_time(int64_t value) {
+  
+  _impl_.start_worker_time_ = value;
+}
+inline void TaskResult::set_start_worker_time(int64_t value) {
+  _internal_set_start_worker_time(value);
+  // @@protoc_insertion_point(field_set:taskscheduler.TaskResult.start_worker_time)
+}
+
+// int64 start_exc_time = 8;
+inline void TaskResult::clear_start_exc_time() {
+  _impl_.start_exc_time_ = int64_t{0};
+}
+inline int64_t TaskResult::_internal_start_exc_time() const {
+  return _impl_.start_exc_time_;
+}
+inline int64_t TaskResult::start_exc_time() const {
+  // @@protoc_insertion_point(field_get:taskscheduler.TaskResult.start_exc_time)
+  return _internal_start_exc_time();
+}
+inline void TaskResult::_internal_set_start_exc_time(int64_t value) {
+  
+  _impl_.start_exc_time_ = value;
+}
+inline void TaskResult::set_start_exc_time(int64_t value) {
+  _internal_set_start_exc_time(value);
+  // @@protoc_insertion_point(field_set:taskscheduler.TaskResult.start_exc_time)
+}
+
+// int64 end_worker_time = 9;
+inline void TaskResult::clear_end_worker_time() {
+  _impl_.end_worker_time_ = int64_t{0};
+}
+inline int64_t TaskResult::_internal_end_worker_time() const {
+  return _impl_.end_worker_time_;
+}
+inline int64_t TaskResult::end_worker_time() const {
+  // @@protoc_insertion_point(field_get:taskscheduler.TaskResult.end_worker_time)
+  return _internal_end_worker_time();
+}
+inline void TaskResult::_internal_set_end_worker_time(int64_t value) {
+  
+  _impl_.end_worker_time_ = value;
+}
+inline void TaskResult::set_end_worker_time(int64_t value) {
+  _internal_set_end_worker_time(value);
+  // @@protoc_insertion_point(field_set:taskscheduler.TaskResult.end_worker_time)
+}
+
+// int64 duration_ms = 10;
 inline void TaskResult::clear_duration_ms() {
   _impl_.duration_ms_ = int64_t{0};
 }
@@ -1618,7 +1804,7 @@ inline void TaskResult::set_duration_ms(int64_t value) {
   // @@protoc_insertion_point(field_set:taskscheduler.TaskResult.duration_ms)
 }
 
-// string worker_id = 8;
+// string worker_id = 11;
 inline void TaskResult::clear_worker_id() {
   _impl_.worker_id_.ClearToEmpty();
 }

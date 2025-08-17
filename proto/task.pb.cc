@@ -40,6 +40,9 @@ PROTOBUF_CONSTEXPR Task::Task(
   , /*decltype(_impl_.worker_id_)*/{&::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized{}}
   , /*decltype(_impl_.type_)*/0
   , /*decltype(_impl_.status_)*/0
+  , /*decltype(_impl_.start_sched_time_)*/int64_t{0}
+  , /*decltype(_impl_.end_sched_time_)*/int64_t{0}
+  , /*decltype(_impl_.start_worker_time_)*/int64_t{0}
   , /*decltype(_impl_._cached_size_)*/{}} {}
 struct TaskDefaultTypeInternal {
   PROTOBUF_CONSTEXPR TaskDefaultTypeInternal()
@@ -56,8 +59,11 @@ PROTOBUF_CONSTEXPR TaskResult::TaskResult(
   , /*decltype(_impl_.output_)*/{&::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized{}}
   , /*decltype(_impl_.error_message_)*/{&::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized{}}
   , /*decltype(_impl_.worker_id_)*/{&::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized{}}
-  , /*decltype(_impl_.start_time_)*/int64_t{0}
-  , /*decltype(_impl_.end_time_)*/int64_t{0}
+  , /*decltype(_impl_.start_sched_time_)*/int64_t{0}
+  , /*decltype(_impl_.end_sched_time_)*/int64_t{0}
+  , /*decltype(_impl_.start_worker_time_)*/int64_t{0}
+  , /*decltype(_impl_.start_exc_time_)*/int64_t{0}
+  , /*decltype(_impl_.end_worker_time_)*/int64_t{0}
   , /*decltype(_impl_.duration_ms_)*/int64_t{0}
   , /*decltype(_impl_.status_)*/0
   , /*decltype(_impl_._cached_size_)*/{}} {}
@@ -156,6 +162,9 @@ const uint32_t TableStruct_task_2eproto::offsets[] PROTOBUF_SECTION_VARIABLE(pro
   PROTOBUF_FIELD_OFFSET(::taskscheduler::Task, _impl_.worker_id_),
   PROTOBUF_FIELD_OFFSET(::taskscheduler::Task, _impl_.status_),
   PROTOBUF_FIELD_OFFSET(::taskscheduler::Task, _impl_.metadata_),
+  PROTOBUF_FIELD_OFFSET(::taskscheduler::Task, _impl_.start_sched_time_),
+  PROTOBUF_FIELD_OFFSET(::taskscheduler::Task, _impl_.end_sched_time_),
+  PROTOBUF_FIELD_OFFSET(::taskscheduler::Task, _impl_.start_worker_time_),
   ~0u,  // no _has_bits_
   PROTOBUF_FIELD_OFFSET(::taskscheduler::TaskResult, _internal_metadata_),
   ~0u,  // no _extensions_
@@ -166,8 +175,11 @@ const uint32_t TableStruct_task_2eproto::offsets[] PROTOBUF_SECTION_VARIABLE(pro
   PROTOBUF_FIELD_OFFSET(::taskscheduler::TaskResult, _impl_.status_),
   PROTOBUF_FIELD_OFFSET(::taskscheduler::TaskResult, _impl_.output_),
   PROTOBUF_FIELD_OFFSET(::taskscheduler::TaskResult, _impl_.error_message_),
-  PROTOBUF_FIELD_OFFSET(::taskscheduler::TaskResult, _impl_.start_time_),
-  PROTOBUF_FIELD_OFFSET(::taskscheduler::TaskResult, _impl_.end_time_),
+  PROTOBUF_FIELD_OFFSET(::taskscheduler::TaskResult, _impl_.start_sched_time_),
+  PROTOBUF_FIELD_OFFSET(::taskscheduler::TaskResult, _impl_.end_sched_time_),
+  PROTOBUF_FIELD_OFFSET(::taskscheduler::TaskResult, _impl_.start_worker_time_),
+  PROTOBUF_FIELD_OFFSET(::taskscheduler::TaskResult, _impl_.start_exc_time_),
+  PROTOBUF_FIELD_OFFSET(::taskscheduler::TaskResult, _impl_.end_worker_time_),
   PROTOBUF_FIELD_OFFSET(::taskscheduler::TaskResult, _impl_.duration_ms_),
   PROTOBUF_FIELD_OFFSET(::taskscheduler::TaskResult, _impl_.worker_id_),
   PROTOBUF_FIELD_OFFSET(::taskscheduler::WorkerHeartbeat_DecEntry_DoNotUse, _has_bits_),
@@ -218,11 +230,11 @@ const uint32_t TableStruct_task_2eproto::offsets[] PROTOBUF_SECTION_VARIABLE(pro
 static const ::_pbi::MigrationSchema schemas[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
   { 0, 8, -1, sizeof(::taskscheduler::Task_MetadataEntry_DoNotUse)},
   { 10, -1, -1, sizeof(::taskscheduler::Task)},
-  { 22, -1, -1, sizeof(::taskscheduler::TaskResult)},
-  { 36, 44, -1, sizeof(::taskscheduler::WorkerHeartbeat_DecEntry_DoNotUse)},
-  { 46, -1, -1, sizeof(::taskscheduler::WorkerHeartbeat)},
-  { 58, 66, -1, sizeof(::taskscheduler::SchedulerHeartbeat_DecEntry_DoNotUse)},
-  { 68, -1, -1, sizeof(::taskscheduler::SchedulerHeartbeat)},
+  { 25, -1, -1, sizeof(::taskscheduler::TaskResult)},
+  { 42, 50, -1, sizeof(::taskscheduler::WorkerHeartbeat_DecEntry_DoNotUse)},
+  { 52, -1, -1, sizeof(::taskscheduler::WorkerHeartbeat)},
+  { 64, 72, -1, sizeof(::taskscheduler::SchedulerHeartbeat_DecEntry_DoNotUse)},
+  { 74, -1, -1, sizeof(::taskscheduler::SchedulerHeartbeat)},
 };
 
 static const ::_pb::Message* const file_default_instances[] = {
@@ -236,36 +248,40 @@ static const ::_pb::Message* const file_default_instances[] = {
 };
 
 const char descriptor_table_protodef_task_2eproto[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) =
-  "\n\ntask.proto\022\rtaskscheduler\"\363\001\n\004Task\022\017\n\007"
+  "\n\ntask.proto\022\rtaskscheduler\"\300\002\n\004Task\022\017\n\007"
   "task_id\030\001 \001(\t\022%\n\004type\030\002 \001(\0162\027.taskschedu"
   "ler.TaskType\022\017\n\007content\030\003 \001(\t\022\021\n\tworker_"
   "id\030\004 \001(\t\022)\n\006status\030\005 \001(\0162\031.taskscheduler"
   ".TaskStatus\0223\n\010metadata\030\006 \003(\0132!.tasksche"
-  "duler.Task.MetadataEntry\032/\n\rMetadataEntr"
-  "y\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 \001(\t:\0028\001\"\275\001\n\nTa"
-  "skResult\022\017\n\007task_id\030\001 \001(\t\022)\n\006status\030\002 \001("
-  "\0162\031.taskscheduler.TaskStatus\022\016\n\006output\030\003"
-  " \001(\t\022\025\n\rerror_message\030\004 \001(\t\022\022\n\nstart_tim"
-  "e\030\005 \001(\003\022\020\n\010end_time\030\006 \001(\003\022\023\n\013duration_ms"
-  "\030\007 \001(\003\022\021\n\tworker_id\030\010 \001(\t\"\325\001\n\017WorkerHear"
-  "tbeat\022\021\n\tworker_id\030\001 \001(\t\022\021\n\tworker_ip\030\002 "
-  "\001(\t\022\023\n\013worker_port\030\003 \001(\005\022\021\n\ttimestamp\030\004 "
-  "\001(\003\022\022\n\nis_healthy\030\005 \001(\010\0224\n\003dec\030\006 \003(\0132\'.t"
-  "askscheduler.WorkerHeartbeat.DecEntry\032*\n"
-  "\010DecEntry\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 \001(\t:\0028"
-  "\001\"\343\001\n\022SchedulerHeartbeat\022\024\n\014scheduler_id"
-  "\030\001 \001(\t\022\024\n\014scheduler_ip\030\002 \001(\t\022\026\n\016schedule"
-  "r_port\030\003 \001(\005\022\020\n\010timetamp\030\004 \001(\005\022\022\n\nis_hea"
-  "lthy\030\005 \001(\010\0227\n\003dec\030\006 \003(\0132*.taskscheduler."
-  "SchedulerHeartbeat.DecEntry\032*\n\010DecEntry\022"
-  "\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 \001(\t:\0028\001*\?\n\nTaskS"
-  "tatus\022\013\n\007PENDING\020\000\022\013\n\007RUNNING\020\001\022\013\n\007SUCCE"
-  "SS\020\002\022\n\n\006FAILED\020\003*%\n\010TaskType\022\014\n\010FUNCTION"
-  "\020\000\022\013\n\007COMMAND\020\001b\006proto3"
+  "duler.Task.MetadataEntry\022\030\n\020start_sched_"
+  "time\030\007 \001(\003\022\026\n\016end_sched_time\030\010 \001(\003\022\031\n\021st"
+  "art_worker_time\030\t \001(\003\032/\n\rMetadataEntry\022\013"
+  "\n\003key\030\001 \001(\t\022\r\n\005value\030\002 \001(\t:\0028\001\"\225\002\n\nTaskR"
+  "esult\022\017\n\007task_id\030\001 \001(\t\022)\n\006status\030\002 \001(\0162\031"
+  ".taskscheduler.TaskStatus\022\016\n\006output\030\003 \001("
+  "\t\022\025\n\rerror_message\030\004 \001(\t\022\030\n\020start_sched_"
+  "time\030\005 \001(\003\022\026\n\016end_sched_time\030\006 \001(\003\022\031\n\021st"
+  "art_worker_time\030\007 \001(\003\022\026\n\016start_exc_time\030"
+  "\010 \001(\003\022\027\n\017end_worker_time\030\t \001(\003\022\023\n\013durati"
+  "on_ms\030\n \001(\003\022\021\n\tworker_id\030\013 \001(\t\"\325\001\n\017Worke"
+  "rHeartbeat\022\021\n\tworker_id\030\001 \001(\t\022\021\n\tworker_"
+  "ip\030\002 \001(\t\022\023\n\013worker_port\030\003 \001(\005\022\021\n\ttimesta"
+  "mp\030\004 \001(\003\022\022\n\nis_healthy\030\005 \001(\010\0224\n\003dec\030\006 \003("
+  "\0132\'.taskscheduler.WorkerHeartbeat.DecEnt"
+  "ry\032*\n\010DecEntry\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 \001"
+  "(\t:\0028\001\"\343\001\n\022SchedulerHeartbeat\022\024\n\014schedul"
+  "er_id\030\001 \001(\t\022\024\n\014scheduler_ip\030\002 \001(\t\022\026\n\016sch"
+  "eduler_port\030\003 \001(\005\022\020\n\010timetamp\030\004 \001(\005\022\022\n\ni"
+  "s_healthy\030\005 \001(\010\0227\n\003dec\030\006 \003(\0132*.tasksched"
+  "uler.SchedulerHeartbeat.DecEntry\032*\n\010DecE"
+  "ntry\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 \001(\t:\0028\001*\?\n\n"
+  "TaskStatus\022\013\n\007PENDING\020\000\022\013\n\007RUNNING\020\001\022\013\n\007"
+  "SUCCESS\020\002\022\n\n\006FAILED\020\003*%\n\010TaskType\022\014\n\010FUN"
+  "CTION\020\000\022\013\n\007COMMAND\020\001b\006proto3"
   ;
 static ::_pbi::once_flag descriptor_table_task_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_task_2eproto = {
-    false, false, 1023, descriptor_table_protodef_task_2eproto,
+    false, false, 1188, descriptor_table_protodef_task_2eproto,
     "task.proto",
     &descriptor_table_task_2eproto_once, nullptr, 0, 7,
     schemas, file_default_instances, TableStruct_task_2eproto::offsets,
@@ -349,6 +365,9 @@ Task::Task(const Task& from)
     , decltype(_impl_.worker_id_){}
     , decltype(_impl_.type_){}
     , decltype(_impl_.status_){}
+    , decltype(_impl_.start_sched_time_){}
+    , decltype(_impl_.end_sched_time_){}
+    , decltype(_impl_.start_worker_time_){}
     , /*decltype(_impl_._cached_size_)*/{}};
 
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
@@ -378,8 +397,8 @@ Task::Task(const Task& from)
       _this->GetArenaForAllocation());
   }
   ::memcpy(&_impl_.type_, &from._impl_.type_,
-    static_cast<size_t>(reinterpret_cast<char*>(&_impl_.status_) -
-    reinterpret_cast<char*>(&_impl_.type_)) + sizeof(_impl_.status_));
+    static_cast<size_t>(reinterpret_cast<char*>(&_impl_.start_worker_time_) -
+    reinterpret_cast<char*>(&_impl_.type_)) + sizeof(_impl_.start_worker_time_));
   // @@protoc_insertion_point(copy_constructor:taskscheduler.Task)
 }
 
@@ -394,6 +413,9 @@ inline void Task::SharedCtor(
     , decltype(_impl_.worker_id_){}
     , decltype(_impl_.type_){0}
     , decltype(_impl_.status_){0}
+    , decltype(_impl_.start_sched_time_){int64_t{0}}
+    , decltype(_impl_.end_sched_time_){int64_t{0}}
+    , decltype(_impl_.start_worker_time_){int64_t{0}}
     , /*decltype(_impl_._cached_size_)*/{}
   };
   _impl_.task_id_.InitDefault();
@@ -448,8 +470,8 @@ void Task::Clear() {
   _impl_.content_.ClearToEmpty();
   _impl_.worker_id_.ClearToEmpty();
   ::memset(&_impl_.type_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&_impl_.status_) -
-      reinterpret_cast<char*>(&_impl_.type_)) + sizeof(_impl_.status_));
+      reinterpret_cast<char*>(&_impl_.start_worker_time_) -
+      reinterpret_cast<char*>(&_impl_.type_)) + sizeof(_impl_.start_worker_time_));
   _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
@@ -517,6 +539,30 @@ const char* Task::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
             CHK_(ptr);
             if (!ctx->DataAvailable(ptr)) break;
           } while (::PROTOBUF_NAMESPACE_ID::internal::ExpectTag<50>(ptr));
+        } else
+          goto handle_unusual;
+        continue;
+      // int64 start_sched_time = 7;
+      case 7:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 56)) {
+          _impl_.start_sched_time_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      // int64 end_sched_time = 8;
+      case 8:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 64)) {
+          _impl_.end_sched_time_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      // int64 start_worker_time = 9;
+      case 9:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 72)) {
+          _impl_.start_worker_time_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
+          CHK_(ptr);
         } else
           goto handle_unusual;
         continue;
@@ -623,6 +669,24 @@ uint8_t* Task::_InternalSerialize(
     }
   }
 
+  // int64 start_sched_time = 7;
+  if (this->_internal_start_sched_time() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteInt64ToArray(7, this->_internal_start_sched_time(), target);
+  }
+
+  // int64 end_sched_time = 8;
+  if (this->_internal_end_sched_time() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteInt64ToArray(8, this->_internal_end_sched_time(), target);
+  }
+
+  // int64 start_worker_time = 9;
+  if (this->_internal_start_worker_time() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteInt64ToArray(9, this->_internal_start_worker_time(), target);
+  }
+
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
         _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
@@ -681,6 +745,21 @@ size_t Task::ByteSizeLong() const {
       ::_pbi::WireFormatLite::EnumSize(this->_internal_status());
   }
 
+  // int64 start_sched_time = 7;
+  if (this->_internal_start_sched_time() != 0) {
+    total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(this->_internal_start_sched_time());
+  }
+
+  // int64 end_sched_time = 8;
+  if (this->_internal_end_sched_time() != 0) {
+    total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(this->_internal_end_sched_time());
+  }
+
+  // int64 start_worker_time = 9;
+  if (this->_internal_start_worker_time() != 0) {
+    total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(this->_internal_start_worker_time());
+  }
+
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
 }
 
@@ -715,6 +794,15 @@ void Task::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_
   if (from._internal_status() != 0) {
     _this->_internal_set_status(from._internal_status());
   }
+  if (from._internal_start_sched_time() != 0) {
+    _this->_internal_set_start_sched_time(from._internal_start_sched_time());
+  }
+  if (from._internal_end_sched_time() != 0) {
+    _this->_internal_set_end_sched_time(from._internal_end_sched_time());
+  }
+  if (from._internal_start_worker_time() != 0) {
+    _this->_internal_set_start_worker_time(from._internal_start_worker_time());
+  }
   _this->_internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
 }
 
@@ -748,8 +836,8 @@ void Task::InternalSwap(Task* other) {
       &other->_impl_.worker_id_, rhs_arena
   );
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(Task, _impl_.status_)
-      + sizeof(Task::_impl_.status_)
+      PROTOBUF_FIELD_OFFSET(Task, _impl_.start_worker_time_)
+      + sizeof(Task::_impl_.start_worker_time_)
       - PROTOBUF_FIELD_OFFSET(Task, _impl_.type_)>(
           reinterpret_cast<char*>(&_impl_.type_),
           reinterpret_cast<char*>(&other->_impl_.type_));
@@ -781,8 +869,11 @@ TaskResult::TaskResult(const TaskResult& from)
     , decltype(_impl_.output_){}
     , decltype(_impl_.error_message_){}
     , decltype(_impl_.worker_id_){}
-    , decltype(_impl_.start_time_){}
-    , decltype(_impl_.end_time_){}
+    , decltype(_impl_.start_sched_time_){}
+    , decltype(_impl_.end_sched_time_){}
+    , decltype(_impl_.start_worker_time_){}
+    , decltype(_impl_.start_exc_time_){}
+    , decltype(_impl_.end_worker_time_){}
     , decltype(_impl_.duration_ms_){}
     , decltype(_impl_.status_){}
     , /*decltype(_impl_._cached_size_)*/{}};
@@ -820,9 +911,9 @@ TaskResult::TaskResult(const TaskResult& from)
     _this->_impl_.worker_id_.Set(from._internal_worker_id(), 
       _this->GetArenaForAllocation());
   }
-  ::memcpy(&_impl_.start_time_, &from._impl_.start_time_,
+  ::memcpy(&_impl_.start_sched_time_, &from._impl_.start_sched_time_,
     static_cast<size_t>(reinterpret_cast<char*>(&_impl_.status_) -
-    reinterpret_cast<char*>(&_impl_.start_time_)) + sizeof(_impl_.status_));
+    reinterpret_cast<char*>(&_impl_.start_sched_time_)) + sizeof(_impl_.status_));
   // @@protoc_insertion_point(copy_constructor:taskscheduler.TaskResult)
 }
 
@@ -835,8 +926,11 @@ inline void TaskResult::SharedCtor(
     , decltype(_impl_.output_){}
     , decltype(_impl_.error_message_){}
     , decltype(_impl_.worker_id_){}
-    , decltype(_impl_.start_time_){int64_t{0}}
-    , decltype(_impl_.end_time_){int64_t{0}}
+    , decltype(_impl_.start_sched_time_){int64_t{0}}
+    , decltype(_impl_.end_sched_time_){int64_t{0}}
+    , decltype(_impl_.start_worker_time_){int64_t{0}}
+    , decltype(_impl_.start_exc_time_){int64_t{0}}
+    , decltype(_impl_.end_worker_time_){int64_t{0}}
     , decltype(_impl_.duration_ms_){int64_t{0}}
     , decltype(_impl_.status_){0}
     , /*decltype(_impl_._cached_size_)*/{}
@@ -890,9 +984,9 @@ void TaskResult::Clear() {
   _impl_.output_.ClearToEmpty();
   _impl_.error_message_.ClearToEmpty();
   _impl_.worker_id_.ClearToEmpty();
-  ::memset(&_impl_.start_time_, 0, static_cast<size_t>(
+  ::memset(&_impl_.start_sched_time_, 0, static_cast<size_t>(
       reinterpret_cast<char*>(&_impl_.status_) -
-      reinterpret_cast<char*>(&_impl_.start_time_)) + sizeof(_impl_.status_));
+      reinterpret_cast<char*>(&_impl_.start_sched_time_)) + sizeof(_impl_.status_));
   _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
@@ -941,33 +1035,57 @@ const char* TaskResult::_InternalParse(const char* ptr, ::_pbi::ParseContext* ct
         } else
           goto handle_unusual;
         continue;
-      // int64 start_time = 5;
+      // int64 start_sched_time = 5;
       case 5:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 40)) {
-          _impl_.start_time_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
+          _impl_.start_sched_time_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
           CHK_(ptr);
         } else
           goto handle_unusual;
         continue;
-      // int64 end_time = 6;
+      // int64 end_sched_time = 6;
       case 6:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 48)) {
-          _impl_.end_time_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
+          _impl_.end_sched_time_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
           CHK_(ptr);
         } else
           goto handle_unusual;
         continue;
-      // int64 duration_ms = 7;
+      // int64 start_worker_time = 7;
       case 7:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 56)) {
+          _impl_.start_worker_time_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      // int64 start_exc_time = 8;
+      case 8:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 64)) {
+          _impl_.start_exc_time_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      // int64 end_worker_time = 9;
+      case 9:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 72)) {
+          _impl_.end_worker_time_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
+          CHK_(ptr);
+        } else
+          goto handle_unusual;
+        continue;
+      // int64 duration_ms = 10;
+      case 10:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 80)) {
           _impl_.duration_ms_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
           CHK_(ptr);
         } else
           goto handle_unusual;
         continue;
-      // string worker_id = 8;
-      case 8:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 66)) {
+      // string worker_id = 11;
+      case 11:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 90)) {
           auto str = _internal_mutable_worker_id();
           ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
           CHK_(ptr);
@@ -1041,32 +1159,50 @@ uint8_t* TaskResult::_InternalSerialize(
         4, this->_internal_error_message(), target);
   }
 
-  // int64 start_time = 5;
-  if (this->_internal_start_time() != 0) {
+  // int64 start_sched_time = 5;
+  if (this->_internal_start_sched_time() != 0) {
     target = stream->EnsureSpace(target);
-    target = ::_pbi::WireFormatLite::WriteInt64ToArray(5, this->_internal_start_time(), target);
+    target = ::_pbi::WireFormatLite::WriteInt64ToArray(5, this->_internal_start_sched_time(), target);
   }
 
-  // int64 end_time = 6;
-  if (this->_internal_end_time() != 0) {
+  // int64 end_sched_time = 6;
+  if (this->_internal_end_sched_time() != 0) {
     target = stream->EnsureSpace(target);
-    target = ::_pbi::WireFormatLite::WriteInt64ToArray(6, this->_internal_end_time(), target);
+    target = ::_pbi::WireFormatLite::WriteInt64ToArray(6, this->_internal_end_sched_time(), target);
   }
 
-  // int64 duration_ms = 7;
+  // int64 start_worker_time = 7;
+  if (this->_internal_start_worker_time() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteInt64ToArray(7, this->_internal_start_worker_time(), target);
+  }
+
+  // int64 start_exc_time = 8;
+  if (this->_internal_start_exc_time() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteInt64ToArray(8, this->_internal_start_exc_time(), target);
+  }
+
+  // int64 end_worker_time = 9;
+  if (this->_internal_end_worker_time() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteInt64ToArray(9, this->_internal_end_worker_time(), target);
+  }
+
+  // int64 duration_ms = 10;
   if (this->_internal_duration_ms() != 0) {
     target = stream->EnsureSpace(target);
-    target = ::_pbi::WireFormatLite::WriteInt64ToArray(7, this->_internal_duration_ms(), target);
+    target = ::_pbi::WireFormatLite::WriteInt64ToArray(10, this->_internal_duration_ms(), target);
   }
 
-  // string worker_id = 8;
+  // string worker_id = 11;
   if (!this->_internal_worker_id().empty()) {
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
       this->_internal_worker_id().data(), static_cast<int>(this->_internal_worker_id().length()),
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE,
       "taskscheduler.TaskResult.worker_id");
     target = stream->WriteStringMaybeAliased(
-        8, this->_internal_worker_id(), target);
+        11, this->_internal_worker_id(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -1106,24 +1242,39 @@ size_t TaskResult::ByteSizeLong() const {
         this->_internal_error_message());
   }
 
-  // string worker_id = 8;
+  // string worker_id = 11;
   if (!this->_internal_worker_id().empty()) {
     total_size += 1 +
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
         this->_internal_worker_id());
   }
 
-  // int64 start_time = 5;
-  if (this->_internal_start_time() != 0) {
-    total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(this->_internal_start_time());
+  // int64 start_sched_time = 5;
+  if (this->_internal_start_sched_time() != 0) {
+    total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(this->_internal_start_sched_time());
   }
 
-  // int64 end_time = 6;
-  if (this->_internal_end_time() != 0) {
-    total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(this->_internal_end_time());
+  // int64 end_sched_time = 6;
+  if (this->_internal_end_sched_time() != 0) {
+    total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(this->_internal_end_sched_time());
   }
 
-  // int64 duration_ms = 7;
+  // int64 start_worker_time = 7;
+  if (this->_internal_start_worker_time() != 0) {
+    total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(this->_internal_start_worker_time());
+  }
+
+  // int64 start_exc_time = 8;
+  if (this->_internal_start_exc_time() != 0) {
+    total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(this->_internal_start_exc_time());
+  }
+
+  // int64 end_worker_time = 9;
+  if (this->_internal_end_worker_time() != 0) {
+    total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(this->_internal_end_worker_time());
+  }
+
+  // int64 duration_ms = 10;
   if (this->_internal_duration_ms() != 0) {
     total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(this->_internal_duration_ms());
   }
@@ -1164,11 +1315,20 @@ void TaskResult::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PRO
   if (!from._internal_worker_id().empty()) {
     _this->_internal_set_worker_id(from._internal_worker_id());
   }
-  if (from._internal_start_time() != 0) {
-    _this->_internal_set_start_time(from._internal_start_time());
+  if (from._internal_start_sched_time() != 0) {
+    _this->_internal_set_start_sched_time(from._internal_start_sched_time());
   }
-  if (from._internal_end_time() != 0) {
-    _this->_internal_set_end_time(from._internal_end_time());
+  if (from._internal_end_sched_time() != 0) {
+    _this->_internal_set_end_sched_time(from._internal_end_sched_time());
+  }
+  if (from._internal_start_worker_time() != 0) {
+    _this->_internal_set_start_worker_time(from._internal_start_worker_time());
+  }
+  if (from._internal_start_exc_time() != 0) {
+    _this->_internal_set_start_exc_time(from._internal_start_exc_time());
+  }
+  if (from._internal_end_worker_time() != 0) {
+    _this->_internal_set_end_worker_time(from._internal_end_worker_time());
   }
   if (from._internal_duration_ms() != 0) {
     _this->_internal_set_duration_ms(from._internal_duration_ms());
@@ -1214,9 +1374,9 @@ void TaskResult::InternalSwap(TaskResult* other) {
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(TaskResult, _impl_.status_)
       + sizeof(TaskResult::_impl_.status_)
-      - PROTOBUF_FIELD_OFFSET(TaskResult, _impl_.start_time_)>(
-          reinterpret_cast<char*>(&_impl_.start_time_),
-          reinterpret_cast<char*>(&other->_impl_.start_time_));
+      - PROTOBUF_FIELD_OFFSET(TaskResult, _impl_.start_sched_time_)>(
+          reinterpret_cast<char*>(&_impl_.start_sched_time_),
+          reinterpret_cast<char*>(&other->_impl_.start_sched_time_));
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata TaskResult::GetMetadata() const {

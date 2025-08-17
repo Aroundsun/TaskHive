@@ -271,6 +271,12 @@ void scheduler::receive_task_thread_function()
                 continue;
             }
             {
+                //填写时间戳
+                task.set_start_sched_time(std::time(nullptr));
+                task.set_end_sched_time(0);
+                task.set_start_worker_time(0);
+                //填写任务状态
+                task.set_status(taskscheduler::TaskStatus::PENDING);
                 //接收到一个任务，存入待执行队列
                 std::lock_guard<std::mutex> lock(pending_tasks_mutex_);
                 pending_tasks_.push(task);
@@ -308,6 +314,7 @@ void scheduler::submit_task_thread_function()
                 std::cout << "submit_task_thread_function 提交任务" << std::endl;
                 task = pending_tasks_.front();
                 pending_tasks_.pop();
+                task.set_end_sched_time(std::time(nullptr));
                 scheduler_task_queue_->publishTask(task);
                 //debug
                 std::cout<<"提交的任务id 是 "<<task.task_id()<<std::endl;

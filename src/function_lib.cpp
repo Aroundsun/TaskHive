@@ -47,6 +47,7 @@ std::map<std::string, std::string> parse_json_params(const char* input) {
         }
     } catch (...) {
         // 解析失败时返回空map
+        return {};
     }
     return params;
 }
@@ -301,3 +302,4 @@ const char* check_port(const char* input) {
     
     return result.c_str();
 } 
+//给一个地址发送一封邮件 

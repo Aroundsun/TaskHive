@@ -22,27 +22,18 @@ public:
 
     //初始化
     void init();
-
     //启动
     void start();
-
     //停止
     void stop();
-
     //接收任务
     void receive_task();
-
     //上报任务结果
     void report_task_result();
-
     //上报心跳
     void report_heartbeat();
-
     //执行任务
     void exec_task();
-
-
-    
 
 private:
     

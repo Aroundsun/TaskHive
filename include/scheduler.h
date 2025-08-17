@@ -96,7 +96,6 @@ private:
 
     //上报心跳线程
     std::thread report_heartbeat_thread_;
-
     //系统信息维护线程
     std::thread system_info_maintenance_thread_;
 

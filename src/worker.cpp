@@ -187,15 +187,23 @@ void Worker::receive_task()
     try
     {
         worker_task_queue_->consumeTask(
-            [this](const taskscheduler::Task &task)
+            [this](taskscheduler::Task &task)
             {
                 // 缓存任务到本地任务队列
                 {
                     std::lock_guard<std::mutex> lock(pending_tasks_mutex_);
+                    task.set_start_worker_time(std::time(nullptr));
                     pending_tasks_.push(task);
-                    // debug
-                    std::cout << " 接收的任务的id:" << task.task_id() << std::endl;
                 }
+
+                //上报当前任务信息 直接构造一个任务结果放入 redis 中
+                taskscheduler::TaskResult task_result;
+                task_result.set_start_sched_time(task.start_sched_time());
+                task_result.set_end_sched_time(task.end_sched_time());
+                task_result.set_start_worker_time(task.start_worker_time());
+                task_result.set_status(task.status());
+
+                    
                 // 通知执行任务线程
                 pending_tasks_queue_not_empty_.notify_one();
             });
@@ -325,21 +333,12 @@ void Worker::exec_task()
     taskscheduler::TaskResult task_result;
     while (running_)
     {
-        // debug
-        // debug
-        std::cout << "执行线程等待锁" << std::endl;
         std::unique_lock<std::mutex> lock(pending_tasks_mutex_);
-        std::cout << "执行线程获取到锁" << std::endl;
 
         if (pending_tasks_.empty() && running_)
         {
-            // debug
-            // debug
-            std::cout << "执行线程被阻塞" << std::endl;
             pending_tasks_queue_not_empty_.wait(lock, [this]()
                                                 { return !running_ || !pending_tasks_.empty(); });
-            ////debug
-            std::cout << "执行任务线程被唤醒了" << std::endl;
         }
         // 如果运行状态为false，退出循环
         if (!running_)
@@ -350,9 +349,10 @@ void Worker::exec_task()
         if (!pending_tasks_.empty())
         {
             taskscheduler::Task task = pending_tasks_.front();
-            // debug
-            std::cout << " 一个待任务的id:" << task.task_id() << std::endl;
+
             pending_tasks_.pop();
+            lock.unlock();   //对待执行队列手动解锁 防止死锁，以及减少锁的颗粒度
+
             // 解析任务
             // 任务类型
             auto task_type = task.type();
@@ -370,8 +370,6 @@ void Worker::exec_task()
             // 执行任务
             if (task_type == taskscheduler::TaskType::COMMAND)
             {
-                // debug
-                std::cout << " 命令的任务的id:" << task.task_id() << std::endl;
                 // 组装参数
                 std::string command = task.content();
                 for (auto &item : params)
@@ -379,6 +377,7 @@ void Worker::exec_task()
                     command += " " + item.first + item.second;
                 }
                 // 执行命令
+                task_result.set_start_exc_time(time(nullptr));
                 std::string result = exec_cmd(command);
                 if (result != "")
                 {
@@ -393,8 +392,7 @@ void Worker::exec_task()
             }
             else if (task_type == taskscheduler::TaskType::FUNCTION)
             {
-                std::cout << " 函数的任务的id:" << task.task_id() << std::endl;
-
+                task_result.set_start_exc_time(time(nullptr));
                 // 执行函数
                 std::string result = exec_func(context, params);
                 // 现在的result是json字符串，需要反序列化
@@ -429,9 +427,11 @@ void Worker::exec_task()
             }
             // 设置任务结果
             task_result.set_task_id(task_id);
-            task_result.set_start_time(time(nullptr));
-            task_result.set_end_time(time(nullptr));
             task_result.set_worker_id(WORKER_ID);
+            //设置时间
+            task_result.set_start_sched_time(task.start_sched_time());
+            task_result.set_end_sched_time(task.end_sched_time());
+            task_result.set_start_worker_time(task.start_worker_time());
 
             // 缓存任务结果
             {
@@ -442,5 +442,6 @@ void Worker::exec_task()
             // 通知上报任务结果线程
             task_result_queue_not_empty_.notify_one();
         }
+
     }
 }

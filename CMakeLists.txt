@@ -24,7 +24,7 @@ target_link_libraries(myfuncs PRIVATE ${JSONCPP_LIBRARIES} pthread dl)
 target_include_directories(myfuncs PRIVATE ${JSONCPP_INCLUDE_DIRS} ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/proto)
 
 # 构建调度器程序
-add_executable(scheduler src/scheduler_main.cpp src/scheduler.cpp src/redis_client.cpp src/zk_client.cpp proto/task.pb.cc)
+add_executable(scheduler src/scheduler_main.cpp src/scheduler.cpp src/redis_client.cpp src/zk_client.cpp proto/task.pb.cc) 
 target_link_libraries(scheduler PRIVATE ${JSONCPP_LIBRARIES} hiredis zookeeper_mt protobuf rabbitmq pthread dl)
 target_include_directories(scheduler PRIVATE ${JSONCPP_INCLUDE_DIRS} ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/proto)
 
