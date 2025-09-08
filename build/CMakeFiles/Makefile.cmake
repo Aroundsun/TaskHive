@@ -51,4 +51,9 @@ set(CMAKE_DEPEND_INFO_FILES
   "CMakeFiles/scheduler.dir/DependInfo.cmake"
   "CMakeFiles/worker.dir/DependInfo.cmake"
   "CMakeFiles/client.dir/DependInfo.cmake"
+  "CMakeFiles/test_redis.dir/DependInfo.cmake"
+  "CMakeFiles/test_zkclient.dir/DependInfo.cmake"
+  "CMakeFiles/test_message_queue.dir/DependInfo.cmake"
+  "CMakeFiles/tests.dir/DependInfo.cmake"
+  "CMakeFiles/test_threadpool.dir/DependInfo.cmake"
   )

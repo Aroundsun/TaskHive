@@ -8,6 +8,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <thread>
+#include "threadpool.h"
 
 
 
@@ -64,5 +65,11 @@ private:
     std::thread report_heartbeat_thread_;//上报心跳线程
     std::thread exec_task_thread_;//执行任务线程
 
+    // 线程池
+    std::unique_ptr<ThreadPool> thread_pool_;
+    size_t pool_init_threads_ = 2;
+    Thread_Mode pool_mode_ = Thread_Mode::CACHE;
+    size_t pool_queue_max_ = 1024;
+    size_t pool_thread_max_ = 8;
 
 };

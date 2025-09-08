@@ -67,6 +67,12 @@
 },
 {
   "directory": "/home/admin_xhy/TaskHive/build",
+  "command": "/usr/bin/aarch64-linux-gnu-g++  -I/usr/include/jsoncpp -I/home/admin_xhy/TaskHive/include -I/home/admin_xhy/TaskHive/proto -g -std=gnu++17 -Wall -Wextra -Wno-unused-parameter -o CMakeFiles/worker.dir/src/threadpool.cpp.o -c /home/admin_xhy/TaskHive/src/threadpool.cpp",
+  "file": "/home/admin_xhy/TaskHive/src/threadpool.cpp",
+  "output": "CMakeFiles/worker.dir/src/threadpool.cpp.o"
+},
+{
+  "directory": "/home/admin_xhy/TaskHive/build",
   "command": "/usr/bin/aarch64-linux-gnu-g++  -I/usr/include/jsoncpp -I/home/admin_xhy/TaskHive/include -I/home/admin_xhy/TaskHive/proto -g -std=gnu++17 -Wall -Wextra -Wno-unused-parameter -o CMakeFiles/worker.dir/proto/task.pb.cc.o -c /home/admin_xhy/TaskHive/proto/task.pb.cc",
   "file": "/home/admin_xhy/TaskHive/proto/task.pb.cc",
   "output": "CMakeFiles/worker.dir/proto/task.pb.cc.o"
@@ -100,5 +106,53 @@
   "command": "/usr/bin/aarch64-linux-gnu-g++  -I/usr/include/jsoncpp -I/home/admin_xhy/TaskHive/include -I/home/admin_xhy/TaskHive/proto -g -std=gnu++17 -Wall -Wextra -Wno-unused-parameter -o CMakeFiles/client.dir/proto/task.pb.cc.o -c /home/admin_xhy/TaskHive/proto/task.pb.cc",
   "file": "/home/admin_xhy/TaskHive/proto/task.pb.cc",
   "output": "CMakeFiles/client.dir/proto/task.pb.cc.o"
+},
+{
+  "directory": "/home/admin_xhy/TaskHive/build",
+  "command": "/usr/bin/aarch64-linux-gnu-g++  -I/home/admin_xhy/TaskHive/include -g -std=gnu++17 -Wall -Wextra -Wno-unused-parameter -o CMakeFiles/test_redis.dir/test/test_redis.cpp.o -c /home/admin_xhy/TaskHive/test/test_redis.cpp",
+  "file": "/home/admin_xhy/TaskHive/test/test_redis.cpp",
+  "output": "CMakeFiles/test_redis.dir/test/test_redis.cpp.o"
+},
+{
+  "directory": "/home/admin_xhy/TaskHive/build",
+  "command": "/usr/bin/aarch64-linux-gnu-g++  -I/home/admin_xhy/TaskHive/include -g -std=gnu++17 -Wall -Wextra -Wno-unused-parameter -o CMakeFiles/test_redis.dir/src/redis_client.cpp.o -c /home/admin_xhy/TaskHive/src/redis_client.cpp",
+  "file": "/home/admin_xhy/TaskHive/src/redis_client.cpp",
+  "output": "CMakeFiles/test_redis.dir/src/redis_client.cpp.o"
+},
+{
+  "directory": "/home/admin_xhy/TaskHive/build",
+  "command": "/usr/bin/aarch64-linux-gnu-g++  -I/home/admin_xhy/TaskHive/include -g -std=gnu++17 -Wall -Wextra -Wno-unused-parameter -o CMakeFiles/test_zkclient.dir/test/test_zkclient.cpp.o -c /home/admin_xhy/TaskHive/test/test_zkclient.cpp",
+  "file": "/home/admin_xhy/TaskHive/test/test_zkclient.cpp",
+  "output": "CMakeFiles/test_zkclient.dir/test/test_zkclient.cpp.o"
+},
+{
+  "directory": "/home/admin_xhy/TaskHive/build",
+  "command": "/usr/bin/aarch64-linux-gnu-g++  -I/home/admin_xhy/TaskHive/include -g -std=gnu++17 -Wall -Wextra -Wno-unused-parameter -o CMakeFiles/test_zkclient.dir/src/zk_client.cpp.o -c /home/admin_xhy/TaskHive/src/zk_client.cpp",
+  "file": "/home/admin_xhy/TaskHive/src/zk_client.cpp",
+  "output": "CMakeFiles/test_zkclient.dir/src/zk_client.cpp.o"
+},
+{
+  "directory": "/home/admin_xhy/TaskHive/build",
+  "command": "/usr/bin/aarch64-linux-gnu-g++  -I/usr/include/jsoncpp -I/home/admin_xhy/TaskHive/include -I/home/admin_xhy/TaskHive/proto -g -std=gnu++17 -Wall -Wextra -Wno-unused-parameter -o CMakeFiles/test_message_queue.dir/test/test_message_queue.cpp.o -c /home/admin_xhy/TaskHive/test/test_message_queue.cpp",
+  "file": "/home/admin_xhy/TaskHive/test/test_message_queue.cpp",
+  "output": "CMakeFiles/test_message_queue.dir/test/test_message_queue.cpp.o"
+},
+{
+  "directory": "/home/admin_xhy/TaskHive/build",
+  "command": "/usr/bin/aarch64-linux-gnu-g++  -I/usr/include/jsoncpp -I/home/admin_xhy/TaskHive/include -I/home/admin_xhy/TaskHive/proto -g -std=gnu++17 -Wall -Wextra -Wno-unused-parameter -o CMakeFiles/test_message_queue.dir/proto/task.pb.cc.o -c /home/admin_xhy/TaskHive/proto/task.pb.cc",
+  "file": "/home/admin_xhy/TaskHive/proto/task.pb.cc",
+  "output": "CMakeFiles/test_message_queue.dir/proto/task.pb.cc.o"
+},
+{
+  "directory": "/home/admin_xhy/TaskHive/build",
+  "command": "/usr/bin/aarch64-linux-gnu-g++  -I/home/admin_xhy/TaskHive/include -g -std=gnu++17 -Wall -Wextra -Wno-unused-parameter -o CMakeFiles/test_threadpool.dir/test/test_threadpool.cpp.o -c /home/admin_xhy/TaskHive/test/test_threadpool.cpp",
+  "file": "/home/admin_xhy/TaskHive/test/test_threadpool.cpp",
+  "output": "CMakeFiles/test_threadpool.dir/test/test_threadpool.cpp.o"
+},
+{
+  "directory": "/home/admin_xhy/TaskHive/build",
+  "command": "/usr/bin/aarch64-linux-gnu-g++  -I/home/admin_xhy/TaskHive/include -g -std=gnu++17 -Wall -Wextra -Wno-unused-parameter -o CMakeFiles/test_threadpool.dir/src/threadpool.cpp.o -c /home/admin_xhy/TaskHive/src/threadpool.cpp",
+  "file": "/home/admin_xhy/TaskHive/src/threadpool.cpp",
+  "output": "CMakeFiles/test_threadpool.dir/src/threadpool.cpp.o"
 }
 ]

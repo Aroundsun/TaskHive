@@ -30,7 +30,7 @@ struct WorkerNode {
     std::string worker_id;
     std::string worker_ip;
     int worker_port;
-    std::map<std::string, std::string> capabilities;
+    std::unordered_map<std::string, std::string> capabilities;
     
     // 负载信息
     int current_connections;

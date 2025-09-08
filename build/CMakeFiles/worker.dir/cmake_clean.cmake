@@ -7,6 +7,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/worker.dir/src/function_lib.cpp.o.d"
   "CMakeFiles/worker.dir/src/redis_client.cpp.o"
   "CMakeFiles/worker.dir/src/redis_client.cpp.o.d"
+  "CMakeFiles/worker.dir/src/threadpool.cpp.o"
+  "CMakeFiles/worker.dir/src/threadpool.cpp.o.d"
   "CMakeFiles/worker.dir/src/worker.cpp.o"
   "CMakeFiles/worker.dir/src/worker.cpp.o.d"
   "CMakeFiles/worker.dir/src/worker_main.cpp.o"

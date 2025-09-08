@@ -18,7 +18,12 @@
 						0,
 						1,
 						2,
-						3
+						3,
+						4,
+						5,
+						6,
+						7,
+						8
 					]
 				}
 			],
@@ -36,7 +41,12 @@
 						0,
 						1,
 						2,
-						3
+						3,
+						4,
+						5,
+						6,
+						7,
+						8
 					]
 				}
 			],
@@ -65,8 +75,43 @@
 				},
 				{
 					"directoryIndex" : 0,
+					"id" : "test_message_queue::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-test_message_queue-Debug-7947ed96685379873389.json",
+					"name" : "test_message_queue",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "test_redis::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-test_redis-Debug-602efc3adb3b8aab8129.json",
+					"name" : "test_redis",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "test_threadpool::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-test_threadpool-Debug-036bebf8709585e58f50.json",
+					"name" : "test_threadpool",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "test_zkclient::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-test_zkclient-Debug-c2de9ec9a5288a2a6621.json",
+					"name" : "test_zkclient",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "tests::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-tests-Debug-a33d522bf5f751a01a30.json",
+					"name" : "tests",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
 					"id" : "worker::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-worker-Debug-40f7955c4b7ea0d6d7e0.json",
+					"jsonFile" : "target-worker-Debug-3425f655cf2545b8cc01.json",
 					"name" : "worker",
 					"projectIndex" : 0
 				}

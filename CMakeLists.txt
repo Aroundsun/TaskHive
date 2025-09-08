@@ -29,7 +29,7 @@ target_link_libraries(scheduler PRIVATE ${JSONCPP_LIBRARIES} hiredis zookeeper_m
 target_include_directories(scheduler PRIVATE ${JSONCPP_INCLUDE_DIRS} ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/proto)
 
 # 构建工作器程序
-add_executable(worker src/worker_main.cpp src/worker.cpp src/redis_client.cpp src/zk_client.cpp src/function_lib.cpp proto/task.pb.cc)
+add_executable(worker src/worker_main.cpp src/worker.cpp src/redis_client.cpp src/zk_client.cpp src/function_lib.cpp src/threadpool.cpp proto/task.pb.cc)
 target_link_libraries(worker PRIVATE ${JSONCPP_LIBRARIES} hiredis zookeeper_mt protobuf rabbitmq myfuncs pthread dl)
 target_include_directories(worker PRIVATE ${JSONCPP_INCLUDE_DIRS} ${PROJECT_SOURCE_DIR}/include ${PROJECT_SOURCE_DIR}/proto)
 
@@ -59,6 +59,12 @@ if(BUILD_TESTS)
     
     # 创建测试目标组
     add_custom_target(tests DEPENDS test_redis test_zkclient test_message_queue)
+
+    # 线程池测试
+    add_executable(test_threadpool test/test_threadpool.cpp src/threadpool.cpp)
+    target_link_libraries(test_threadpool PRIVATE pthread dl)
+    target_include_directories(test_threadpool PRIVATE ${PROJECT_SOURCE_DIR}/include)
+    add_dependencies(tests test_threadpool)
     
     message(STATUS "Test programs will be built")
 else()

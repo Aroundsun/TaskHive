@@ -101,6 +101,9 @@ void Worker::init()
         std::cerr << "连接RabbitMQ结果队列失败" << std::endl;
         return;
     }
+
+    // 初始化线程池（不启动）
+    thread_pool_ = std::make_unique<ThreadPool>(pool_init_threads_, pool_mode_, pool_queue_max_, pool_thread_max_);
 }
 
 void Worker::start()
@@ -108,6 +111,11 @@ void Worker::start()
     if (running_)
         return;
     running_ = true;
+    // 启动线程池
+    if (thread_pool_)
+    {
+        thread_pool_->start();
+    }
 
     // 启动上报心跳线程
     report_heartbeat_thread_ = std::thread(&Worker::report_heartbeat, this);
@@ -168,6 +176,12 @@ void Worker::stop()
         consume_task_result_thread_.join();
         // 打印日志
         std::cout << "消费任务结果线程已停止" << std::endl;
+    }
+
+    // 停止线程池
+    if (thread_pool_)
+    {
+        thread_pool_->stop();
     }
 
     // 关闭zk客户端
@@ -367,80 +381,82 @@ void Worker::exec_task()
             {
                 params[item.first] = item.second;
             }
-            // 执行任务
-            if (task_type == taskscheduler::TaskType::COMMAND)
-            {
-                // 组装参数
-                std::string command = task.content();
-                for (auto &item : params)
+            // 提交到线程池执行
+            thread_pool_->submit([this, task, task_type, context, params, task_id]() mutable {
+                taskscheduler::TaskResult task_result_local;
+                try
                 {
-                    command += " " + item.first + item.second;
+                    if (task_type == taskscheduler::TaskType::COMMAND)
+                    {
+                        std::string command = context;
+                        for (auto &item : params)
+                        {
+                            command += " " + item.first + item.second;
+                        }
+                        task_result_local.set_start_exc_time(time(nullptr));
+                        std::string result = exec_cmd(command);
+                        if (result != "")
+                        {
+                            task_result_local.set_output(result);
+                            task_result_local.set_status(taskscheduler::TaskStatus::SUCCESS);
+                        }
+                        else
+                        {
+                            task_result_local.set_error_message("命令执行失败");
+                            task_result_local.set_status(taskscheduler::TaskStatus::FAILED);
+                        }
+                    }
+                    else if (task_type == taskscheduler::TaskType::FUNCTION)
+                    {
+                        task_result_local.set_start_exc_time(time(nullptr));
+                        std::string result = exec_func(context, params);
+                        Json::Value root;
+                        Json::CharReaderBuilder reader;
+                        std::unique_ptr<Json::CharReader> reader_ptr(reader.newCharReader());
+                        if (!reader_ptr->parse(result.c_str(), result.c_str() + result.size(), &root, nullptr))
+                        {
+                            std::cerr << "JSON 解析失败: " << std::endl;
+                        }
+                        std::string output = root["data"].asString();
+                        std::string error_message = root["message"].asString();
+                        bool success = root["success"].asBool();
+                        if (success)
+                        {
+                            task_result_local.set_output(output);
+                            task_result_local.set_status(taskscheduler::TaskStatus::SUCCESS);
+                        }
+                        else
+                        {
+                            task_result_local.set_error_message(error_message);
+                            task_result_local.set_status(taskscheduler::TaskStatus::FAILED);
+                        }
+                    }
+                    else
+                    {
+                        task_result_local.set_error_message("不支持的任务类型");
+                        task_result_local.set_status(taskscheduler::TaskStatus::FAILED);
+                    }
                 }
-                // 执行命令
-                task_result.set_start_exc_time(time(nullptr));
-                std::string result = exec_cmd(command);
-                if (result != "")
+                catch (const std::exception &e)
                 {
-                    task_result.set_output(result);
-                    task_result.set_status(taskscheduler::TaskStatus::SUCCESS);
+                    task_result_local.set_error_message(std::string("执行异常: ") + e.what());
+                    task_result_local.set_status(taskscheduler::TaskStatus::FAILED);
                 }
-                else
-                {
-                    task_result.set_error_message("命令执行失败");
-                    task_result.set_status(taskscheduler::TaskStatus::FAILED);
-                }
-            }
-            else if (task_type == taskscheduler::TaskType::FUNCTION)
-            {
-                task_result.set_start_exc_time(time(nullptr));
-                // 执行函数
-                std::string result = exec_func(context, params);
-                // 现在的result是json字符串，需要反序列化
-                Json::Value root;
-                Json::CharReaderBuilder reader;
-                Json::CharReader *reader_ptr = reader.newCharReader();
-                if (!reader_ptr->parse(result.c_str(), result.c_str() + result.size(), &root, nullptr))
-                {
-                    std::cerr << "JSON 解析失败: " << std::endl;
-                }
-                std::string output = root["data"].asString();
-                std::string error_message = root["message"].asString();
-                bool success = root["success"].asBool();
-                delete reader_ptr; // 释放内存
-                // 反序列化任务结果
-                if (success)
-                {
-                    task_result.set_output(output);
-                    task_result.set_status(taskscheduler::TaskStatus::SUCCESS);
-                }
-                else
-                {
-                    task_result.set_error_message(error_message);
-                    task_result.set_status(taskscheduler::TaskStatus::FAILED);
-                }
-            }
-            else
-            {
-                // 不支持的任务类型
-                task_result.set_error_message("不支持的任务类型");
-                task_result.set_status(taskscheduler::TaskStatus::FAILED);
-            }
-            // 设置任务结果
-            task_result.set_task_id(task_id);
-            task_result.set_worker_id(WORKER_ID);
-            //设置时间
-            task_result.set_start_sched_time(task.start_sched_time());
-            task_result.set_end_sched_time(task.end_sched_time());
-            task_result.set_start_worker_time(task.start_worker_time());
 
-            // 缓存任务结果
-            {
-                std::lock_guard<std::mutex> lock(task_result_queue_mutex_);
-                task_result_queue_.push(task_result);
-            }
+                // 设置公共字段
+                task_result_local.set_task_id(task_id);
+                task_result_local.set_worker_id(WORKER_ID);
+                task_result_local.set_start_sched_time(task.start_sched_time());
+                task_result_local.set_end_sched_time(task.end_sched_time());
+                task_result_local.set_start_worker_time(task.start_worker_time());
 
-            // 通知上报任务结果线程
-            task_result_queue_not_empty_.notify_one();
+                // 入结果队列
+                {
+                    std::lock_guard<std::mutex> g(task_result_queue_mutex_);
+                    task_result_queue_.push(task_result_local);
+                }
+                task_result_queue_not_empty_.notify_one();
+            });
         }
 
     }
